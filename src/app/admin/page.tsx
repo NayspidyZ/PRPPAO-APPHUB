@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { AppItem, CategoryItem, DEFAULT_CATEGORIES } from '@/types/app';
-import { DynamicIcon, POPULAR_ICONS } from '@/components/DynamicIcon';
+import { DynamicIcon, POPULAR_ICONS, CATEGORY_POPULAR_ICONS } from '@/components/DynamicIcon';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -899,35 +899,64 @@ export default function AdminPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Order */}
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">ลำดับการแสดงผล (Order)</label>
-                  <input
-                    type="number"
-                    value={editingCategory.order ?? 1}
-                    onChange={(e) =>
-                      setEditingCategory({ ...editingCategory, order: parseInt(e.target.value, 10) || 1 })
-                    }
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
-                  />
+              {/* Order */}
+              <div>
+                <label className="block font-medium text-slate-700 mb-1">ลำดับการแสดงผล (Order)</label>
+                <input
+                  type="number"
+                  value={editingCategory.order ?? 1}
+                  onChange={(e) =>
+                    setEditingCategory({ ...editingCategory, order: parseInt(e.target.value, 10) || 1 })
+                  }
+                  className="w-full sm:w-48 rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                />
+              </div>
+
+              {/* Icon Picker */}
+              <div className="pt-1">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block font-medium text-slate-700">
+                    เลือกไอคอนหมวดหมู่ <span className="text-slate-400 font-normal">({CATEGORY_POPULAR_ICONS.length} ตัวเลือกยอดนิยม)</span>
+                  </label>
+                  <div className="flex items-center gap-1.5 bg-sky-50 text-sky-700 px-2.5 py-1 rounded-lg border border-sky-200/60 text-[11px] font-medium">
+                    <DynamicIcon name={editingCategory.icon || 'Folder'} className="h-4 w-4" />
+                    <span>ไอคอนที่เลือก: <strong>{editingCategory.icon || 'Folder'}</strong></span>
+                  </div>
                 </div>
 
-                {/* Icon */}
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">ไอคอนหมวดหมู่</label>
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-100 text-sky-700 shrink-0">
-                      <DynamicIcon name={editingCategory.icon || 'Folder'} className="h-4 w-4" />
-                    </div>
-                    <input
-                      type="text"
-                      value={editingCategory.icon || ''}
-                      onChange={(e) => setEditingCategory({ ...editingCategory, icon: e.target.value })}
-                      placeholder="Folder, Tag..."
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none"
-                    />
-                  </div>
+                {/* Interactive Icon Grid */}
+                <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 max-h-52 overflow-y-auto p-2.5 bg-slate-50 border border-slate-200 rounded-xl scrollbar-thin">
+                  {CATEGORY_POPULAR_ICONS.map((iconName) => {
+                    const isSelected = (editingCategory.icon || 'Folder') === iconName;
+                    return (
+                      <button
+                        key={iconName}
+                        type="button"
+                        onClick={() => setEditingCategory({ ...editingCategory, icon: iconName })}
+                        className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all ${
+                          isSelected
+                            ? 'bg-sky-500 text-white border-sky-600 shadow-sm ring-2 ring-sky-300 scale-95 font-semibold'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                        }`}
+                        title={iconName}
+                      >
+                        <DynamicIcon name={iconName} className="h-5 w-5 mb-1 shrink-0" />
+                        <span className="truncate w-full text-center text-[10px]">{iconName}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Custom icon or image URL fallback */}
+                <div className="mt-2.5 flex items-center gap-2">
+                  <span className="text-[11px] text-slate-500 shrink-0">หรือระบุชื่อไอคอน / URL เอง:</span>
+                  <input
+                    type="text"
+                    value={editingCategory.icon || ''}
+                    onChange={(e) => setEditingCategory({ ...editingCategory, icon: e.target.value })}
+                    placeholder="เช่น Folder, Newspaper หรือ https://..."
+                    className="flex-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs focus:border-sky-500 focus:outline-none"
+                  />
                 </div>
               </div>
 
