@@ -23,6 +23,16 @@ export interface ApiResponse<T> {
   isMock?: boolean;
 }
 
+export interface CategoryItem {
+  id: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  order: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export const DEFAULT_CATEGORIES = [
   'ทั้งหมด',
   'งานประชาสัมพันธ์และข่าวสาร',
@@ -32,3 +42,4 @@ export const DEFAULT_CATEGORIES = [
   'สถิติ รายงาน และแบบฟอร์ม',
   'เครื่องมือและบริการออนไลน์',
 ] as const;
+

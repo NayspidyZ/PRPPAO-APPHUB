@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { AppItem, DEFAULT_CATEGORIES } from '@/types/app';
+import React, { useState, useEffect, useMemo } from 'react';
+import { AppItem, CategoryItem, DEFAULT_CATEGORIES } from '@/types/app';
 import { DynamicIcon, POPULAR_ICONS } from '@/components/DynamicIcon';
 import Link from 'next/link';
 import {
@@ -20,38 +20,61 @@ import {
   Layers,
   HelpCircle,
   FileCode,
+  FolderPlus,
+  LayoutGrid,
+  FolderTree,
 } from 'lucide-react';
 
 export default function AdminPage() {
+  const [activeTab, setActiveTab] = useState<'apps' | 'categories'>('apps');
+
+  // Apps State
   const [apps, setApps] = useState<AppItem[]>([]);
+  const [editingApp, setEditingApp] = useState<Partial<AppItem> | null>(null);
+  const [isAppModalOpen, setIsAppModalOpen] = useState(false);
+
+  // Categories State
+  const [categories, setCategories] = useState<CategoryItem[]>([]);
+  const [editingCategory, setEditingCategory] = useState<Partial<CategoryItem> | null>(null);
+  const [isCatModalOpen, setIsCatModalOpen] = useState(false);
+
+  // General State
   const [loading, setLoading] = useState(true);
   const [isMock, setIsMock] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [editingApp, setEditingApp] = useState<Partial<AppItem> | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [showGuide, setShowGuide] = useState(false);
 
-  // Load apps
-  const loadApps = async () => {
+  // Load all data
+  const loadData = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/apps', { cache: 'no-store' });
-      const data = await res.json();
-      if (data.status === 'success') {
-        setApps(data.data || []);
-        setIsMock(Boolean(data.isMock));
+      const [appsRes, catsRes] = await Promise.all([
+        fetch('/api/apps', { cache: 'no-store' }),
+        fetch('/api/categories', { cache: 'no-store' }),
+      ]);
+
+      const appsData = await appsRes.json();
+      const catsData = await catsRes.json();
+
+      if (appsData.status === 'success') {
+        setApps(appsData.data || []);
+        setIsMock(Boolean(appsData.isMock));
+      }
+
+      if (catsData.status === 'success' && Array.isArray(catsData.data)) {
+        setCategories(catsData.data);
       }
     } catch (err) {
-      showToast('error', 'ไม่สามารถโหลดข้อมูลแอปพลิเคชันได้');
+      showToast('error', 'ไม่สามารถโหลดข้อมูลได้');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadApps();
+    loadData();
   }, []);
 
   const showToast = (type: 'success' | 'error', message: string) => {
@@ -59,30 +82,31 @@ export default function AdminPage() {
     setTimeout(() => setNotification(null), 4000);
   };
 
-  // Open modal for Create
-  const handleAddNew = () => {
+  // -------------------------------------------------------------
+  // APP HANDLERS
+  // -------------------------------------------------------------
+  const handleAddNewApp = () => {
+    const defaultCategory = categories.length > 0 ? categories[0].name : 'งานประชาสัมพันธ์และข่าวสาร';
     setEditingApp({
       name: '',
       description: '',
       url: '',
-      category: 'งานประชาสัมพันธ์และข่าวสาร',
+      category: defaultCategory,
       icon: 'Megaphone',
       status: 'active',
       order: apps.length + 1,
       department: 'ฝ่ายประชาสัมพันธ์',
       tags: [],
     });
-    setIsModalOpen(true);
+    setIsAppModalOpen(true);
   };
 
-  // Open modal for Edit
-  const handleEdit = (app: AppItem) => {
+  const handleEditApp = (app: AppItem) => {
     setEditingApp({ ...app });
-    setIsModalOpen(true);
+    setIsAppModalOpen(true);
   };
 
-  // Save (Create or Update)
-  const handleSave = async (e: React.FormEvent) => {
+  const handleSaveApp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingApp || !editingApp.name || !editingApp.url) {
       showToast('error', 'กรุณากรอกชื่อแอปและลิงก์ (URL)');
@@ -103,10 +127,10 @@ export default function AdminPage() {
 
       const result = await res.json();
       if (res.ok && result.status === 'success') {
-        showToast('success', isUpdating ? 'อัปเดตข้อมูลสำเร็จ' : 'เพิ่มแอปพลิเคชันสำเร็จ');
-        setIsModalOpen(false);
+        showToast('success', isUpdating ? 'อัปเดตข้อมูลแอปสำเร็จ' : 'เพิ่มแอปพลิเคชันสำเร็จ');
+        setIsAppModalOpen(false);
         setEditingApp(null);
-        await loadApps();
+        await loadData();
       } else {
         showToast('error', result.message || 'บันทึกข้อมูลไม่สำเร็จ');
       }
@@ -117,8 +141,7 @@ export default function AdminPage() {
     }
   };
 
-  // Delete App
-  const handleDelete = async (id: string, name: string) => {
+  const handleDeleteApp = async (id: string, name: string) => {
     const confirmDelete = window.confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบระบบ "${name}"?`);
     if (!confirmDelete) return;
 
@@ -127,7 +150,7 @@ export default function AdminPage() {
       const result = await res.json();
       if (res.ok && result.status === 'success') {
         showToast('success', 'ลบข้อมูลสำเร็จ');
-        await loadApps();
+        await loadData();
       } else {
         showToast('error', result.message || 'ลบข้อมูลไม่สำเร็จ');
       }
@@ -136,7 +159,96 @@ export default function AdminPage() {
     }
   };
 
-  // Filtered list
+  // -------------------------------------------------------------
+  // CATEGORY HANDLERS
+  // -------------------------------------------------------------
+  const handleAddNewCategory = () => {
+    setEditingCategory({
+      name: '',
+      description: '',
+      icon: 'Folder',
+      order: categories.length + 1,
+    });
+    setIsCatModalOpen(true);
+  };
+
+  const handleEditCategory = (cat: CategoryItem) => {
+    setEditingCategory({ ...cat });
+    setIsCatModalOpen(true);
+  };
+
+  const handleSaveCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCategory || !editingCategory.name || !editingCategory.name.trim()) {
+      showToast('error', 'กรุณากรอกชื่อหมวดหมู่');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const isUpdating = Boolean(editingCategory.id);
+      const url = isUpdating ? `/api/categories/${editingCategory.id}` : '/api/categories';
+      const method = isUpdating ? 'PUT' : 'POST';
+
+      // Find original name if updating
+      const oldName = isUpdating ? categories.find((c) => c.id === editingCategory.id)?.name : undefined;
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          data: editingCategory,
+          name: editingCategory.name,
+          description: editingCategory.description,
+          icon: editingCategory.icon,
+          order: editingCategory.order,
+          oldName,
+        }),
+      });
+
+      const result = await res.json();
+      if (res.ok && result.status === 'success') {
+        showToast('success', isUpdating ? 'อัปเดตหมวดหมู่สำเร็จ' : 'เพิ่มหมวดหมู่ใหม่สำเร็จ');
+        setIsCatModalOpen(false);
+        setEditingCategory(null);
+        await loadData();
+      } else {
+        showToast('error', result.message || 'บันทึกหมวดหมู่ไม่สำเร็จ');
+      }
+    } catch (err: any) {
+      showToast('error', 'เกิดข้อผิดพลาด: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteCategory = async (id: string, name: string) => {
+    const appsInCat = apps.filter((a) => a.category === name).length;
+    let message = `คุณแน่ใจหรือไม่ว่าต้องการลบหมวดหมู่ "${name}"?`;
+    if (appsInCat > 0) {
+      message += `\n\nคำเตือน: มีแอปพลิเคชัน ${appsInCat} รายการที่อยู่ในหมวดหมู่นี้ แอปเหล่านี้จะถูกเปลี่ยนไปอยู่หมวดหมู่ "ทั่วไป" อัตโนมัติ`;
+    }
+
+    const confirmDelete = window.confirm(message);
+    if (!confirmDelete) return;
+
+    try {
+      const res = await fetch(`/api/categories/${id}?name=${encodeURIComponent(name)}`, {
+        method: 'DELETE',
+      });
+      const result = await res.json();
+      if (res.ok && result.status === 'success') {
+        showToast('success', 'ลบหมวดหมู่สำเร็จ');
+        await loadData();
+      } else {
+        showToast('error', result.message || 'ลบหมวดหมู่ไม่สำเร็จ');
+      }
+    } catch (err: any) {
+      showToast('error', 'เกิดข้อผิดพลาด: ' + err.message);
+    }
+  };
+
+  // Filtered Apps
   const filteredApps = apps.filter((app) => {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
@@ -146,6 +258,13 @@ export default function AdminPage() {
       app.department?.toLowerCase().includes(q) ||
       app.url.toLowerCase().includes(q)
     );
+  });
+
+  // Filtered Categories
+  const filteredCategories = categories.filter((cat) => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return true;
+    return cat.name.toLowerCase().includes(q) || cat.description?.toLowerCase().includes(q);
   });
 
   return (
@@ -176,13 +295,23 @@ export default function AdminPage() {
               <HelpCircle className="h-4 w-4 text-sky-600" />
               <span className="hidden sm:inline">วิธีเชื่อม Google Sheet</span>
             </button>
-            <button
-              onClick={handleAddNew}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-all"
-            >
-              <Plus className="h-4 w-4" />
-              <span>เพิ่มแอปใหม่</span>
-            </button>
+            {activeTab === 'apps' ? (
+              <button
+                onClick={handleAddNewApp}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-all"
+              >
+                <Plus className="h-4 w-4" />
+                <span>เพิ่มแอปใหม่</span>
+              </button>
+            ) : (
+              <button
+                onClick={handleAddNewCategory}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-all"
+              >
+                <FolderPlus className="h-4 w-4" />
+                <span>เพิ่มหมวดหมู่ใหม่</span>
+              </button>
+            )}
           </div>
         </div>
       </nav>
@@ -228,8 +357,8 @@ export default function AdminPage() {
               </h3>
               <p className="text-xs mt-0.5 opacity-90 leading-relaxed">
                 {isMock
-                  ? 'ยังไม่ได้ตั้งค่าตัวแปร GAS_API_URL ในระบบ ข้อมูลจะถูกจัดเก็บในหน่วยความจำชั่วคราว นำ URL เว็บแอปของ Google Apps Script ไปใส่ใน .env.local หรือ Vercel เพื่อใช้งานจริง'
-                  : 'ระบบเชื่อมต่อกับ Google Apps Script และอัปเดตข้อมูลลงชีตโดยอัตโนมัติ'}
+                  ? 'ยังไม่ได้ตั้งค่าตัวแปร GAS_API_URL ในระบบ ข้อมูลและหมวดหมู่จะถูกจัดเก็บในหน่วยความจำชั่วคราว นำ URL เว็บแอปของ Google Apps Script ไปใส่ใน .env.local หรือ Vercel เพื่อใช้งานจริง'
+                  : 'ระบบเชื่อมต่อกับ Google Apps Script (ชีต Apps และ Categories) และอัปเดตข้อมูลลงชีตโดยอัตโนมัติ'}
               </p>
             </div>
           </div>
@@ -247,15 +376,17 @@ export default function AdminPage() {
           <div className="rounded-2xl border border-sky-200 bg-sky-50/60 p-5 text-xs text-slate-700 space-y-3">
             <div className="flex items-center gap-2 font-bold text-sky-900 text-sm">
               <FileCode className="h-4 w-4" />
-              <span>ขั้นตอนเชื่อมต่อ Google Sheet ด้วย Google Apps Script</span>
+              <span>ขั้นตอนเชื่อมต่อ Google Sheet ด้วย Google Apps Script (รองรับทั้ง Apps และ Categories)</span>
             </div>
             <ol className="list-decimal list-inside space-y-2 leading-relaxed">
-              <li>เปิด Google Sheets ใหม่ที่ต้องการใช้เก็บข้อมูล</li>
+              <li>เปิด Google Sheets ที่ต้องการใช้เก็บข้อมูล</li>
               <li>ไปที่เมนู <strong>ส่วนขยาย (Extensions) &gt; Apps Script</strong></li>
               <li>
                 คัดลอกโค้ดจากไฟล์ในโปรเจกต์นี้ <code className="bg-white px-1.5 py-0.5 rounded border">gas/Code.gs</code> ไปวางแทนที่โค้ดเดิม
               </li>
-              <li>กดเลือกฟังก์ชัน <strong>setupSheet</strong> แล้วกด <strong>เรียกใช้ (Run)</strong> เพื่อสร้างหัวตารางและตัวอย่างข้อมูล</li>
+              <li>
+                กดเลือกฟังก์ชัน <strong>setupSheet</strong> แล้วกด <strong>เรียกใช้ (Run)</strong> เพื่อสร้างแท็บ <code>Apps</code> และ <code>Categories</code> พร้อมตัวอย่างข้อมูลอัตโนมัติ
+              </li>
               <li>
                 กดปุ่มสีน้ำเงินมุมขวาบน <strong>ทำให้ใช้งานได้ (Deploy) &gt; การทำให้ใช้งานได้ใหม่ (New deployment)</strong>
                 <ul className="list-disc list-inside ml-4 mt-1 space-y-0.5 text-slate-600">
@@ -270,138 +401,261 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Search & Stats Filter */}
+        {/* Tab Navigation: Apps vs Categories */}
+        <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setActiveTab('apps');
+                setSearchQuery('');
+              }}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition-all ${
+                activeTab === 'apps'
+                  ? 'bg-sky-600 text-white shadow-sm'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+              }`}
+            >
+              <LayoutGrid className="h-4 w-4" />
+              <span>จัดการแอปพลิเคชัน ({apps.length})</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTab('categories');
+                setSearchQuery('');
+              }}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition-all ${
+                activeTab === 'categories'
+                  ? 'bg-sky-600 text-white shadow-sm'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+              }`}
+            >
+              <FolderTree className="h-4 w-4" />
+              <span>จัดการหมวดหมู่ ({categories.length})</span>
+            </button>
+          </div>
+
+          <button
+            onClick={loadData}
+            disabled={loading}
+            className="p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+            title="รีเฟรชข้อมูลทั้งหมด"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+
+        {/* Search Bar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="relative w-full sm:w-72">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="ค้นหาในตาราง..."
+              placeholder={activeTab === 'apps' ? 'ค้นหาแอปพลิเคชัน...' : 'ค้นหาหมวดหมู่...'}
               className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500"
             />
           </div>
 
-          <div className="flex items-center gap-2 self-end sm:self-auto">
-            <span className="text-xs text-slate-500">ทั้งหมด {filteredApps.length} รายการ</span>
-            <button
-              onClick={loadApps}
-              disabled={loading}
-              className="p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-              title="รีเฟรช"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-            </button>
+          <div className="text-xs text-slate-500">
+            {activeTab === 'apps' ? `ทั้งหมด ${filteredApps.length} แอป` : `ทั้งหมด ${filteredCategories.length} หมวดหมู่`}
           </div>
         </div>
 
-        {/* Table of Apps */}
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-600">
-              <thead className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                <tr>
-                  <th className="py-3.5 px-4">ลำดับ</th>
-                  <th className="py-3.5 px-4">ไอคอน / ชื่อแอปพลิเคชัน</th>
-                  <th className="py-3.5 px-4">หมวดหมู่</th>
-                  <th className="py-3.5 px-4">หน่วยงานรับผิดชอบ</th>
-                  <th className="py-3.5 px-4">สถานะ</th>
-                  <th className="py-3.5 px-4 text-center">จัดการ</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-normal">
-                {loading ? (
+        {/* ========================================================================= */}
+        {/* TAB 1: APPS TABLE */}
+        {/* ========================================================================= */}
+        {activeTab === 'apps' && (
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-600">
+                <thead className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                   <tr>
-                    <td colSpan={6} className="py-10 text-center text-slate-400">
-                      กำลังโหลดข้อมูล...
-                    </td>
+                    <th className="py-3.5 px-4">ลำดับ</th>
+                    <th className="py-3.5 px-4">ไอคอน / ชื่อแอปพลิเคชัน</th>
+                    <th className="py-3.5 px-4">หมวดหมู่</th>
+                    <th className="py-3.5 px-4">หน่วยงานรับผิดชอบ</th>
+                    <th className="py-3.5 px-4">สถานะ</th>
+                    <th className="py-3.5 px-4 text-center">จัดการ</th>
                   </tr>
-                ) : filteredApps.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-10 text-center text-slate-400">
-                      ไม่พบข้อมูลแอปพลิเคชัน
-                    </td>
-                  </tr>
-                ) : (
-                  filteredApps.map((app) => (
-                    <tr key={app.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3 px-4 font-mono text-slate-400">
-                        {app.order ?? '-'}
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-100 text-sky-700 shrink-0">
-                            <DynamicIcon name={app.icon} className="h-5 w-5" />
-                          </div>
-                          <div>
-                            <div className="font-semibold text-slate-900">{app.name}</div>
-                            <div className="flex items-center gap-1 text-[11px] text-slate-600 truncate max-w-xs">
-                              <span>{app.url}</span>
-                              <a
-                                href={app.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-sky-600 hover:text-sky-800"
-                              >
-                                <ExternalLink className="h-3 w-3 inline" />
-                              </a>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-700">
-                          {app.category}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-slate-600">
-                        {app.department || '-'}
-                      </td>
-                      <td className="py-3 px-4">
-                        {app.status === 'active' ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 border border-emerald-200">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                            เปิดใช้งาน
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 border border-amber-200">
-                            ปิดปรับปรุง
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => handleEdit(app)}
-                            className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-sky-600 transition-colors"
-                            title="แก้ไข"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(app.id, app.name)}
-                            className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors"
-                            title="ลบ"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-normal">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={6} className="py-10 text-center text-slate-400">
+                        กำลังโหลดข้อมูล...
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : filteredApps.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-10 text-center text-slate-400">
+                        ไม่พบข้อมูลแอปพลิเคชัน
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredApps.map((app) => (
+                      <tr key={app.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3 px-4 font-mono text-slate-400">
+                          {app.order ?? '-'}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-100 text-sky-700 shrink-0">
+                              <DynamicIcon name={app.icon} className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <div className="font-semibold text-slate-900">{app.name}</div>
+                              <div className="flex items-center gap-1 text-[11px] text-slate-600 truncate max-w-xs">
+                                <span>{app.url}</span>
+                                <a
+                                  href={app.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-sky-600 hover:text-sky-800"
+                                >
+                                  <ExternalLink className="h-3 w-3 inline" />
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-700">
+                            {app.category}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-600">
+                          {app.department || '-'}
+                        </td>
+                        <td className="py-3 px-4">
+                          {app.status === 'active' ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 border border-emerald-200">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                              เปิดใช้งาน
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 border border-amber-200">
+                              ปิดปรับปรุง
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => handleEditApp(app)}
+                              className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-sky-600 transition-colors"
+                              title="แก้ไข"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteApp(app.id, app.name)}
+                              className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors"
+                              title="ลบ"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 2: CATEGORIES TABLE */}
+        {/* ========================================================================= */}
+        {activeTab === 'categories' && (
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-600">
+                <thead className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  <tr>
+                    <th className="py-3.5 px-4">ลำดับ</th>
+                    <th className="py-3.5 px-4">ไอคอน / ชื่อหมวดหมู่</th>
+                    <th className="py-3.5 px-4">คำอธิบาย</th>
+                    <th className="py-3.5 px-4 text-center">จำนวนแอปในหมวดนี้</th>
+                    <th className="py-3.5 px-4 text-center">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-normal">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={5} className="py-10 text-center text-slate-400">
+                        กำลังโหลดข้อมูลหมวดหมู่...
+                      </td>
+                    </tr>
+                  ) : filteredCategories.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-10 text-center text-slate-400">
+                        ไม่พบข้อมูลหมวดหมู่
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredCategories.map((cat) => {
+                      const appCount = apps.filter((a) => a.category === cat.name).length;
+                      return (
+                        <tr key={cat.id} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-3 px-4 font-mono text-slate-400">
+                            {cat.order ?? '-'}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-100 text-sky-700 shrink-0">
+                                <DynamicIcon name={cat.icon || 'Folder'} className="h-5 w-5" />
+                              </div>
+                              <span className="font-semibold text-slate-900 text-sm">{cat.name}</span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-slate-500 max-w-sm truncate">
+                            {cat.description || '-'}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+                              {appCount} แอป
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => handleEditCategory(cat)}
+                                className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-sky-600 transition-colors"
+                                title="แก้ไขหมวดหมู่"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteCategory(cat.id, cat.name)}
+                                className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors"
+                                title="ลบหมวดหมู่"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </main>
 
-      {/* Modal: Add/Edit App */}
-      {isModalOpen && editingApp && (
+      {/* ========================================================================= */}
+      {/* MODAL 1: ADD / EDIT APP */}
+      {/* ========================================================================= */}
+      {isAppModalOpen && editingApp && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="relative w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 my-8">
             <button
-              onClick={() => setIsModalOpen(false)}
+              onClick={() => setIsAppModalOpen(false)}
               className="absolute right-4 top-4 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
             >
               <X className="h-5 w-5" />
@@ -419,7 +673,7 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <form onSubmit={handleSave} className="space-y-4 text-xs">
+            <form onSubmit={handleSaveApp} className="space-y-4 text-xs">
               {/* Name */}
               <div>
                 <label className="block font-medium text-slate-700 mb-1">
@@ -463,20 +717,33 @@ export default function AdminPage() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Category */}
+                {/* Category Dropdown (Dynamically from categories state!) */}
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">หมวดหมู่</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-medium text-slate-700">หมวดหมู่</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAppModalOpen(false);
+                        setActiveTab('categories');
+                        handleAddNewCategory();
+                      }}
+                      className="text-[10px] text-sky-600 hover:underline"
+                    >
+                      + เพิ่มหมวดใหม่
+                    </button>
+                  </div>
                   <select
-                    value={editingApp.category || 'ทั่วไป'}
+                    value={editingApp.category || (categories[0]?.name ?? 'ทั่วไป')}
                     onChange={(e) => setEditingApp({ ...editingApp, category: e.target.value })}
                     className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
                   >
-                    {DEFAULT_CATEGORIES.filter((c) => c !== 'ทั้งหมด').map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.name}>
+                        {cat.name}
                       </option>
                     ))}
-                    <option value="ทั่วไป">ทั่วไป</option>
+                    {categories.length === 0 && <option value="ทั่วไป">ทั่วไป</option>}
                   </select>
                 </div>
 
@@ -560,7 +827,7 @@ export default function AdminPage() {
               <div className="flex gap-2 pt-4 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => setIsAppModalOpen(false)}
                   className="flex-1 rounded-xl border border-slate-200 py-2.5 font-medium text-slate-600 hover:bg-slate-50"
                 >
                   ยกเลิก
@@ -572,6 +839,114 @@ export default function AdminPage() {
                 >
                   <Save className="h-4 w-4" />
                   <span>{saving ? 'กำลังบันทึก...' : 'บันทึกข้อมูล'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 2: ADD / EDIT CATEGORY */}
+      {/* ========================================================================= */}
+      {isCatModalOpen && editingCategory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 my-8">
+            <button
+              onClick={() => setIsCatModalOpen(false)}
+              className="absolute right-4 top-4 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
+                <FolderTree className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">
+                  {editingCategory.id ? 'แก้ไขหมวดหมู่' : 'เพิ่มหมวดหมู่ใหม่'}
+                </h3>
+                <p className="text-xs text-slate-500">จัดการชื่อและลำดับการแสดงผลของหมวดหมู่</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveCategory} className="space-y-4 text-xs">
+              {/* Category Name */}
+              <div>
+                <label className="block font-medium text-slate-700 mb-1">
+                  ชื่อหมวดหมู่ <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editingCategory.name || ''}
+                  onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
+                  placeholder="เช่น งานประชาสัมพันธ์และข่าวสาร"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block font-medium text-slate-700 mb-1">คำอธิบายหมวดหมู่</label>
+                <textarea
+                  rows={2}
+                  value={editingCategory.description || ''}
+                  onChange={(e) => setEditingCategory({ ...editingCategory, description: e.target.value })}
+                  placeholder="รายละเอียดสั้นๆ ของหมวดหมู่นี้..."
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Order */}
+                <div>
+                  <label className="block font-medium text-slate-700 mb-1">ลำดับการแสดงผล (Order)</label>
+                  <input
+                    type="number"
+                    value={editingCategory.order ?? 1}
+                    onChange={(e) =>
+                      setEditingCategory({ ...editingCategory, order: parseInt(e.target.value, 10) || 1 })
+                    }
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                  />
+                </div>
+
+                {/* Icon */}
+                <div>
+                  <label className="block font-medium text-slate-700 mb-1">ไอคอนหมวดหมู่</label>
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-100 text-sky-700 shrink-0">
+                      <DynamicIcon name={editingCategory.icon || 'Folder'} className="h-4 w-4" />
+                    </div>
+                    <input
+                      type="text"
+                      value={editingCategory.icon || ''}
+                      onChange={(e) => setEditingCategory({ ...editingCategory, icon: e.target.value })}
+                      placeholder="Folder, Tag..."
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Form Buttons */}
+              <div className="flex gap-2 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsCatModalOpen(false)}
+                  className="flex-1 rounded-xl border border-slate-200 py-2.5 font-medium text-slate-600 hover:bg-slate-50"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 py-2.5 font-medium text-white shadow-sm hover:bg-sky-700 disabled:opacity-50"
+                >
+                  <Save className="h-4 w-4" />
+                  <span>{saving ? 'กำลังบันทึก...' : 'บันทึกหมวดหมู่'}</span>
                 </button>
               </div>
             </form>

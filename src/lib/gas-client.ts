@@ -1,8 +1,9 @@
-import { AppItem, ApiResponse } from '@/types/app';
-import { INITIAL_MOCK_APPS } from './mock-data';
+import { AppItem, CategoryItem, ApiResponse } from '@/types/app';
+import { INITIAL_MOCK_APPS, INITIAL_MOCK_CATEGORIES } from './mock-data';
 
 // Store in-memory for dev/demo when GAS_API_URL is not set
 let inMemoryMockApps: AppItem[] = [...INITIAL_MOCK_APPS];
+let inMemoryMockCategories: CategoryItem[] = [...INITIAL_MOCK_CATEGORIES];
 
 export function getGasUrl(): string | undefined {
   return process.env.GAS_API_URL;
@@ -24,12 +25,12 @@ export async function fetchAllApps(): Promise<{ apps: AppItem[]; isMock: boolean
   }
 
   try {
-    const response = await fetch(gasUrl!, {
+    const response = await fetch(`${gasUrl!}?type=apps`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
       },
-      cache: 'no-store', // Always get fresh data
+      cache: 'no-store',
     });
 
     if (!response.ok) {
@@ -38,9 +39,10 @@ export async function fetchAllApps(): Promise<{ apps: AppItem[]; isMock: boolean
     }
 
     const json = await response.json();
-    if (json.status === 'success' && Array.isArray(json.data)) {
-      // Map and sanitize raw rows
-      const items: AppItem[] = json.data.map((item: any) => ({
+    const rawApps = Array.isArray(json.data) ? json.data : (json.apps || []);
+
+    if (Array.isArray(rawApps)) {
+      const items: AppItem[] = rawApps.map((item: any) => ({
         id: String(item.id || item.ID || ''),
         name: String(item.name || item.Name || ''),
         description: String(item.description || item.Description || ''),
@@ -55,12 +57,10 @@ export async function fetchAllApps(): Promise<{ apps: AppItem[]; isMock: boolean
         updatedAt: item.updatedAt || item.UpdatedAt || '',
       }));
 
-      // Sort by order ascending
       items.sort((a, b) => (a.order || 999) - (b.order || 999));
       return { apps: items, isMock: false };
     }
 
-    console.warn('[GAS] Unexpected JSON format from GAS. Falling back to mock data.');
     return { apps: [...inMemoryMockApps], isMock: true };
   } catch (error) {
     console.error('[GAS] Error connecting to Google Apps Script:', error);
@@ -205,6 +205,219 @@ export async function deleteGasApp(id: string): Promise<ApiResponse<null>> {
     return {
       status: 'error',
       message: 'เกิดข้อผิดพลาดในการลบ: ' + error.message,
+    };
+  }
+}
+
+// =============================================================================
+// CATEGORIES CRUD
+// =============================================================================
+
+/**
+ * ดึงรายการหมวดหมู่ทั้งหมด
+ */
+export async function fetchAllCategories(): Promise<{ categories: CategoryItem[]; isMock: boolean }> {
+  const gasUrl = getGasUrl();
+
+  if (isUsingMock()) {
+    return { categories: [...inMemoryMockCategories], isMock: true };
+  }
+
+  try {
+    const response = await fetch(`${gasUrl!}?type=categories`, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      return { categories: [...inMemoryMockCategories], isMock: true };
+    }
+
+    const json = await response.json();
+    const rawCategories = json.categories || json.data || [];
+
+    if (Array.isArray(rawCategories) && rawCategories.length > 0) {
+      const items: CategoryItem[] = rawCategories.map((item: any) => ({
+        id: String(item.id || item.ID || ''),
+        name: String(item.name || item.Name || ''),
+        description: String(item.description || item.Description || ''),
+        icon: String(item.icon || item.Icon || 'Folder'),
+        order: Number(item.order || item.Order || 1),
+        createdAt: item.createdAt || item.CreatedAt || '',
+        updatedAt: item.updatedAt || item.UpdatedAt || '',
+      }));
+
+      items.sort((a, b) => (a.order || 999) - (b.order || 999));
+      return { categories: items, isMock: false };
+    }
+
+    return { categories: [...inMemoryMockCategories], isMock: true };
+  } catch (error) {
+    console.error('[GAS] Error fetching categories from GAS:', error);
+    return { categories: [...inMemoryMockCategories], isMock: true };
+  }
+}
+
+/**
+ * เพิ่มหมวดหมู่ใหม่
+ */
+export async function createGasCategory(
+  categoryData: Omit<CategoryItem, 'id' | 'createdAt' | 'updatedAt'>
+): Promise<ApiResponse<CategoryItem>> {
+  const newCat: CategoryItem = {
+    ...categoryData,
+    id: 'cat-' + Date.now(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  if (isUsingMock()) {
+    inMemoryMockCategories.push(newCat);
+    inMemoryMockCategories.sort((a, b) => (a.order || 999) - (b.order || 999));
+    return {
+      status: 'success',
+      data: newCat,
+      message: 'เพิ่มหมวดหมู่เรียบร้อย (โหมดจำลอง Mock Data)',
+      isMock: true,
+    };
+  }
+
+  try {
+    const response = await fetch(getGasUrl()!, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'CREATE_CATEGORY',
+        data: newCat,
+      }),
+    });
+
+    const result = await response.json();
+    return {
+      status: result.status === 'success' ? 'success' : 'error',
+      data: result.data || newCat,
+      message: result.message || 'เพิ่มหมวดหมู่สำเร็จ',
+      isMock: false,
+    };
+  } catch (error: any) {
+    return {
+      status: 'error',
+      message: 'เกิดข้อผิดพลาดในการเพิ่มหมวดหมู่: ' + error.message,
+    };
+  }
+}
+
+/**
+ * แก้ไขหมวดหมู่
+ */
+export async function updateGasCategory(
+  id: string,
+  categoryData: Partial<CategoryItem>,
+  oldName?: string
+): Promise<ApiResponse<CategoryItem>> {
+  if (isUsingMock()) {
+    const index = inMemoryMockCategories.findIndex((c) => c.id === id);
+    if (index !== -1) {
+      const prevName = inMemoryMockCategories[index].name;
+      inMemoryMockCategories[index] = {
+        ...inMemoryMockCategories[index],
+        ...categoryData,
+        updatedAt: new Date().toISOString(),
+      };
+      inMemoryMockCategories.sort((a, b) => (a.order || 999) - (b.order || 999));
+
+      // Also rename category across apps if name changed
+      if (categoryData.name && categoryData.name !== prevName) {
+        inMemoryMockApps.forEach((app) => {
+          if (app.category === prevName) {
+            app.category = categoryData.name!;
+          }
+        });
+      }
+
+      return {
+        status: 'success',
+        data: inMemoryMockCategories[index],
+        message: 'อัปเดตหมวดหมู่เรียบร้อย (โหมดจำลอง Mock Data)',
+        isMock: true,
+      };
+    }
+    return { status: 'error', message: 'ไม่พบรหัสหมวดหมู่ที่ต้องการแก้ไข' };
+  }
+
+  try {
+    const response = await fetch(getGasUrl()!, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'UPDATE_CATEGORY',
+        id,
+        data: {
+          ...categoryData,
+          updatedAt: new Date().toISOString(),
+        },
+        oldName,
+      }),
+    });
+
+    const result = await response.json();
+    return {
+      status: result.status === 'success' ? 'success' : 'error',
+      data: result.data,
+      message: result.message || 'อัปเดตหมวดหมู่สำเร็จ',
+      isMock: false,
+    };
+  } catch (error: any) {
+    return {
+      status: 'error',
+      message: 'เกิดข้อผิดพลาดในการอัปเดตหมวดหมู่: ' + error.message,
+    };
+  }
+}
+
+/**
+ * ลบหมวดหมู่
+ */
+export async function deleteGasCategory(id: string, categoryName?: string): Promise<ApiResponse<null>> {
+  if (isUsingMock()) {
+    inMemoryMockCategories = inMemoryMockCategories.filter((c) => c.id !== id);
+    // If deleted category was used in any app, fall back to "ทั่วไป"
+    if (categoryName) {
+      inMemoryMockApps.forEach((app) => {
+        if (app.category === categoryName) {
+          app.category = 'ทั่วไป';
+        }
+      });
+    }
+    return {
+      status: 'success',
+      message: 'ลบหมวดหมู่เรียบร้อย (โหมดจำลอง Mock Data)',
+      isMock: true,
+    };
+  }
+
+  try {
+    const response = await fetch(getGasUrl()!, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'DELETE_CATEGORY',
+        id,
+        categoryName,
+      }),
+    });
+
+    const result = await response.json();
+    return {
+      status: result.status === 'success' ? 'success' : 'error',
+      message: result.message || 'ลบหมวดหมู่สำเร็จ',
+      isMock: false,
+    };
+  } catch (error: any) {
+    return {
+      status: 'error',
+      message: 'เกิดข้อผิดพลาดในการลบหมวดหมู่: ' + error.message,
     };
   }
 }

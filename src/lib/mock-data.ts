@@ -1,4 +1,55 @@
-import { AppItem } from '@/types/app';
+import { AppItem, CategoryItem } from '@/types/app';
+
+export const INITIAL_MOCK_CATEGORIES: CategoryItem[] = [
+  {
+    id: 'cat-001',
+    name: 'งานประชาสัมพันธ์และข่าวสาร',
+    description: 'ระบบข่าว ประกาศ แถลงข่าว และงานเผยแพร่สู่สาธารณะ',
+    icon: 'Megaphone',
+    order: 1,
+    createdAt: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'cat-002',
+    name: 'สื่อ กราฟิก และคลังภาพ',
+    description: 'คลังรูปภาพ วิดีโอ เทมเพลต CI และงานสตูดิโอ',
+    icon: 'Camera',
+    order: 2,
+    createdAt: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'cat-003',
+    name: 'โซเชียลมีเดียและการตลาด',
+    description: 'Facebook, YouTube, TikTok และช่องทางโซเชียลมีเดีย',
+    icon: 'Share2',
+    order: 3,
+    createdAt: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'cat-004',
+    name: 'ระบบงานภายในองค์กร',
+    description: 'ระบบสารบรรณ การอนุมัติเอกสาร และระบบงานราชการภายใน',
+    icon: 'FileText',
+    order: 4,
+    createdAt: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'cat-005',
+    name: 'สถิติ รายงาน และแบบฟอร์ม',
+    description: 'แดชบอร์ดสรุปผล สถิติการมีส่วนร่วม และแบบประเมิน',
+    icon: 'BarChart3',
+    order: 5,
+    createdAt: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'cat-006',
+    name: 'เครื่องมือและบริการออนไลน์',
+    description: 'สายตรงผู้บริหาร ระบบรับเรื่องร้องเรียน และบริการออนไลน์',
+    icon: 'Headphones',
+    order: 6,
+    createdAt: '2026-01-01T00:00:00.000Z',
+  },
+];
 
 export const INITIAL_MOCK_APPS: AppItem[] = [
   {

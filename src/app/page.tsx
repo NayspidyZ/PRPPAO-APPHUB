@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { AppItem, DEFAULT_CATEGORIES } from '@/types/app';
+import { AppItem, CategoryItem, DEFAULT_CATEGORIES } from '@/types/app';
 import { Header } from '@/components/Header';
 import { AppGrid } from '@/components/AppGrid';
 import { Footer } from '@/components/Footer';
@@ -11,44 +11,61 @@ import Link from 'next/link';
 
 export default function HomePage() {
   const [apps, setApps] = useState<AppItem[]>([]);
+  const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isMock, setIsMock] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ทั้งหมด');
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
 
-  // Fetch apps from API
-  const loadApps = async () => {
+  // Fetch apps & categories from API
+  const loadData = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/apps', { cache: 'no-store' });
-      const json = await res.json();
-      if (json.status === 'success' && Array.isArray(json.data)) {
-        setApps(json.data);
-        setIsMock(Boolean(json.isMock));
+      const [appsRes, catsRes] = await Promise.all([
+        fetch('/api/apps', { cache: 'no-store' }),
+        fetch('/api/categories', { cache: 'no-store' }),
+      ]);
+
+      const appsJson = await appsRes.json();
+      const catsJson = await catsRes.json();
+
+      if (appsJson.status === 'success' && Array.isArray(appsJson.data)) {
+        setApps(appsJson.data);
+        setIsMock(Boolean(appsJson.isMock));
+      }
+
+      if (catsJson.status === 'success' && Array.isArray(catsJson.data)) {
+        setCategories(catsJson.data);
       }
     } catch (err) {
-      console.error('Failed to load apps:', err);
+      console.error('Failed to load data:', err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadApps();
+    loadData();
   }, []);
 
-  // Compute unique categories dynamically from actual apps list while keeping DEFAULT_CATEGORIES
-  const categories = useMemo(() => {
-    const set = new Set<string>(['ทั้งหมด']);
-    DEFAULT_CATEGORIES.forEach((c) => {
-      if (c !== 'ทั้งหมด') set.add(c);
+  // Compute unique categories dynamically from DB categories list
+  const displayCategories = useMemo(() => {
+    const list = ['ทั้งหมด'];
+    // Add from dynamic categories in sorted order
+    categories.forEach((cat) => {
+      if (cat.name && !list.includes(cat.name)) {
+        list.push(cat.name);
+      }
     });
+    // Add any category used by apps if not in list
     apps.forEach((a) => {
-      if (a.category) set.add(a.category);
+      if (a.category && !list.includes(a.category)) {
+        list.push(a.category);
+      }
     });
-    return Array.from(set);
-  }, [apps]);
+    return list;
+  }, [categories, apps]);
 
   // Filter apps by search query and category
   const filteredApps = useMemo(() => {
@@ -103,7 +120,7 @@ export default function HomePage() {
         setSearchQuery={setSearchQuery}
         selectedCategory={selectedCategory}
         setSelectedCategory={setSelectedCategory}
-        categories={categories}
+        categories={displayCategories}
         totalApps={totalApps}
         activeApps={activeApps}
         isMock={isMock}
@@ -124,7 +141,7 @@ export default function HomePage() {
           </div>
 
           <button
-            onClick={loadApps}
+            onClick={loadData}
             disabled={loading}
             title="รีเฟรชข้อมูล"
             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-2xs disabled:opacity-50"
