@@ -281,9 +281,12 @@ export default function AdminPage() {
               <span>กลับสู่หน้าหลัก</span>
             </Link>
             <div className="h-4 w-px bg-slate-200"></div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-slate-900 text-sm sm:text-base">ระบบจัดการ PR-PPAO APP HUB</span>
-              <span className="rounded bg-sky-100 text-sky-800 text-[10px] font-semibold px-2 py-0.5">Admin</span>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-900 text-sm sm:text-base">ระบบจัดการ PR-PPAO APP HUB</span>
+                <span className="rounded bg-sky-100 text-sky-800 text-[10px] font-semibold px-2 py-0.5">Admin</span>
+              </div>
+              <span className="text-[10px] text-slate-500 hidden sm:inline">ศูนย์รวมแอปพลิเคชันและระบบงาน ฝ่ายประชาสัมพันธ์ องค์การบริหารส่วนจังหวัดภูเก็ต</span>
             </div>
           </div>
 
