@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       status: body.status === 'maintenance' ? 'maintenance' : 'active',
       order: Number(body.order) || 1,
       tags: Array.isArray(body.tags) ? body.tags : [],
-      department: String(body.department || 'ฝ่ายประชาสัมพันธ์').trim(),
+      department: String(body.department || 'ฝ่ายการประชาสัมพันธ์').trim(),
     };
 
     const result = await createGasApp(appData as any);

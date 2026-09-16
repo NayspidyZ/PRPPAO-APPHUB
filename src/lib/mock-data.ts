@@ -62,7 +62,7 @@ export const INITIAL_MOCK_APPS: AppItem[] = [
     status: 'active',
     order: 1,
     tags: ['ข่าวสาร', 'ประกาศ', 'แถลงข่าว'],
-    department: 'ฝ่ายประชาสัมพันธ์',
+    department: 'ฝ่ายการประชาสัมพันธ์',
     createdAt: '2026-01-10T08:00:00.000Z',
   },
   {
@@ -88,7 +88,7 @@ export const INITIAL_MOCK_APPS: AppItem[] = [
     status: 'active',
     order: 3,
     tags: ['ขอใช้บริการ', 'งานออกแบบ', 'ถ่ายภาพ'],
-    department: 'ฝ่ายประชาสัมพันธ์',
+    department: 'ฝ่ายการประชาสัมพันธ์',
     createdAt: '2026-01-15T10:00:00.000Z',
   },
   {
@@ -114,7 +114,7 @@ export const INITIAL_MOCK_APPS: AppItem[] = [
     status: 'active',
     order: 5,
     tags: ['Facebook', 'โซเชียล', 'Inbox'],
-    department: 'ฝ่ายประชาสัมพันธ์',
+    department: 'ฝ่ายการประชาสัมพันธ์',
     createdAt: '2026-01-25T14:00:00.000Z',
   },
   {

@@ -95,7 +95,7 @@ export default function AdminPage() {
       icon: 'Megaphone',
       status: 'active',
       order: apps.length + 1,
-      department: 'ฝ่ายประชาสัมพันธ์',
+      department: 'ฝ่ายการประชาสัมพันธ์',
       tags: [],
     });
     setIsAppModalOpen(true);
@@ -286,7 +286,7 @@ export default function AdminPage() {
                 <span className="font-bold text-slate-900 text-sm sm:text-base">ระบบจัดการ PR-PPAO APP HUB</span>
                 <span className="rounded bg-sky-100 text-sky-800 text-[10px] font-semibold px-2 py-0.5">Admin</span>
               </div>
-              <span className="text-[10px] text-slate-500 hidden sm:inline">ศูนย์รวมแอปพลิเคชันและระบบงาน ฝ่ายประชาสัมพันธ์ องค์การบริหารส่วนจังหวัดภูเก็ต</span>
+              <span className="text-[10px] text-slate-500 hidden sm:inline">ศูนย์รวมแอปพลิเคชันและระบบงาน ฝ่ายการประชาสัมพันธ์ องค์การบริหารส่วนจังหวัดภูเก็ต</span>
             </div>
           </div>
 
@@ -772,7 +772,7 @@ export default function AdminPage() {
                     type="text"
                     value={editingApp.department || ''}
                     onChange={(e) => setEditingApp({ ...editingApp, department: e.target.value })}
-                    placeholder="เช่น ฝ่ายประชาสัมพันธ์"
+                    placeholder="เช่น ฝ่ายการประชาสัมพันธ์"
                     className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
                   />
                 </div>
