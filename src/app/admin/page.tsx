@@ -515,7 +515,10 @@ export default function AdminPage() {
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-3">
-                            <div className={`flex h-9 w-9 items-center justify-center rounded-lg text-white shadow-xs shrink-0 ${getAppColorClasses(app.color).gradient}`}>
+                            <div
+                              style={{ backgroundColor: getAppColorClasses(app.color).bgHex }}
+                              className={`flex h-9 w-9 items-center justify-center rounded-lg text-white shadow-xs shrink-0 ${getAppColorClasses(app.color).gradient}`}
+                            >
                               <DynamicIcon name={app.icon} className="h-5 w-5" />
                             </div>
                             <div>
@@ -833,6 +836,7 @@ export default function AdminPage() {
                   {/* Live Preview Badge */}
                   <div className="flex items-center gap-2 rounded-xl border border-slate-200/80 bg-slate-50 px-3 py-1.5 shadow-2xs">
                     <div
+                      style={{ backgroundColor: getAppColorClasses(editingApp.color).bgHex }}
                       className={`flex h-8 w-8 items-center justify-center rounded-lg text-white shadow-xs transition-all ${
                         getAppColorClasses(editingApp.color).gradient
                       }`}
@@ -895,6 +899,7 @@ export default function AdminPage() {
                           key={iconName}
                           type="button"
                           onClick={() => setEditingApp({ ...editingApp, icon: iconName })}
+                          style={isSelected ? { backgroundColor: getAppColorClasses(editingApp.color).bgHex } : undefined}
                           className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all ${
                             isSelected
                               ? `${getAppColorClasses(editingApp.color).gradient} text-white border-transparent shadow-sm ring-2 ring-offset-1 ring-slate-400 scale-95 font-semibold`

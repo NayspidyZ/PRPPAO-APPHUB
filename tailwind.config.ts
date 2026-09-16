@@ -2,9 +2,16 @@ import type { Config } from "tailwindcss";
 
 const config: Config = {
   content: [
-    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  safelist: [
+    {
+      pattern: /(from|to|via)-(sky|blue|indigo|purple|pink|rose|orange|amber|emerald|teal|slate|yellow|red|cyan)-(500|600|700|800)/,
+    },
+    {
+      pattern: /shadow-(sky|blue|indigo|purple|pink|rose|orange|amber|emerald|teal|slate)-(200|300)/,
+    },
+    'bg-gradient-to-tr',
   ],
   theme: {
     extend: {

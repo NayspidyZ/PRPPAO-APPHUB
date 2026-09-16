@@ -54,6 +54,7 @@ export const AppCard: React.FC<AppCardProps> = ({ app, onEdit, isAdmin = false }
         {/* Card Header: Icon + Status */}
         <div className="flex items-start justify-between gap-3 mb-4">
           <div
+            style={isMaintenance ? undefined : { backgroundColor: colorClasses.bgHex }}
             className={`flex h-13 w-13 items-center justify-center rounded-xl p-3 shadow-inner transition-transform duration-200 group-hover:scale-105 ${
               isMaintenance
                 ? 'bg-amber-100 text-amber-700'

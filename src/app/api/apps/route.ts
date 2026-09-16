@@ -41,10 +41,12 @@ export async function POST(request: Request) {
       url: String(body.url).trim(),
       category: String(body.category || 'ทั่วไป').trim(),
       icon: String(body.icon || 'Globe').trim(),
+      color: String(body.color || 'sky').trim(),
       status: body.status === 'maintenance' ? 'maintenance' : 'active',
       order: Number(body.order) || 1,
       tags: Array.isArray(body.tags) ? body.tags : [],
       department: String(body.department || 'ฝ่ายการประชาสัมพันธ์').trim(),
+      clicks: Number(body.clicks || 0),
     };
 
     const result = await createGasApp(appData as any);

@@ -67,19 +67,22 @@ export const APP_COLOR_PRESETS: AppColorPreset[] = [
   { id: 'slate', name: 'เทาสุขุม (Slate)', gradient: 'bg-gradient-to-tr from-slate-600 to-slate-800', shadow: 'shadow-slate-300', bgHex: '#475569' },
 ];
 
-export function getAppColorClasses(colorId?: string): { gradient: string; shadow: string } {
+export function getAppColorPreset(colorId?: string): AppColorPreset {
   const found = APP_COLOR_PRESETS.find((c) => c.id === colorId);
-  if (found) {
-    return { gradient: found.gradient, shadow: found.shadow };
-  }
+  return found || APP_COLOR_PRESETS[0];
+}
+
+export function getAppColorClasses(colorId?: string): { gradient: string; shadow: string; bgHex: string } {
+  const preset = getAppColorPreset(colorId);
   return {
-    gradient: 'bg-gradient-to-tr from-sky-500 to-cyan-500',
-    shadow: 'shadow-sky-200',
+    gradient: preset.gradient,
+    shadow: preset.shadow,
+    bgHex: preset.bgHex,
   };
 }
 
 export function getAppColorName(colorId?: string): string {
-  const found = APP_COLOR_PRESETS.find((c) => c.id === colorId);
-  return found ? found.name : 'ฟ้าอันดามัน (Sky)';
+  const preset = getAppColorPreset(colorId);
+  return preset.name;
 }
 
