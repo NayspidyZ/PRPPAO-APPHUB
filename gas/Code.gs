@@ -27,6 +27,7 @@ const APPS_HEADERS = [
   "url",
   "category",
   "icon",
+  "color",
   "status",
   "order",
   "tags",
@@ -75,6 +76,7 @@ function setupSheet() {
       "https://www.facebook.com",
       "งานประชาสัมพันธ์และข่าวสาร",
       "Megaphone",
+      "sky",
       "active",
       1,
       "ข่าวสาร,ประกาศ,แถลงข่าว",
@@ -90,6 +92,7 @@ function setupSheet() {
       "https://photos.google.com",
       "สื่อ กราฟิก และคลังภาพ",
       "Camera",
+      "purple",
       "active",
       2,
       "รูปภาพ,วิดีโอ,คลังภาพ",
@@ -191,6 +194,7 @@ function doPost(e) {
         app.url || "",
         app.category || "ทั่วไป",
         app.icon || "Globe",
+        app.color || "sky",
         app.status || "active",
         app.order || sheet.getLastRow(),
         Array.isArray(app.tags) ? app.tags.join(",") : (app.tags || ""),
@@ -203,7 +207,7 @@ function doPost(e) {
       return responseJson({
         status: "success",
         message: "บันทึกข้อมูลเรียบร้อย",
-        data: { ...app, id: newId, clicks: Number(app.clicks || 0), createdAt: now, updatedAt: now }
+        data: { ...app, id: newId, color: app.color || "sky", clicks: Number(app.clicks || 0), createdAt: now, updatedAt: now }
       });
     }
 

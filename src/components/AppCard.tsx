@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { AppItem } from '@/types/app';
+import { AppItem, getAppColorClasses } from '@/types/app';
 import { DynamicIcon } from './DynamicIcon';
 import { ExternalLink, AlertTriangle, CheckCircle2, Building2, MousePointerClick } from 'lucide-react';
 
@@ -14,6 +14,7 @@ interface AppCardProps {
 export const AppCard: React.FC<AppCardProps> = ({ app, onEdit, isAdmin = false }) => {
   const isMaintenance = app.status === 'maintenance';
   const [clickCount, setClickCount] = useState<number>(app.clicks || 0);
+  const colorClasses = getAppColorClasses(app.color);
 
   useEffect(() => {
     setClickCount(app.clicks || 0);
@@ -56,7 +57,7 @@ export const AppCard: React.FC<AppCardProps> = ({ app, onEdit, isAdmin = false }
             className={`flex h-13 w-13 items-center justify-center rounded-xl p-3 shadow-inner transition-transform duration-200 group-hover:scale-105 ${
               isMaintenance
                 ? 'bg-amber-100 text-amber-700'
-                : 'bg-gradient-to-tr from-sky-500 to-cyan-500 text-white shadow-sky-200'
+                : `${colorClasses.gradient} text-white ${colorClasses.shadow}`
             }`}
           >
             <DynamicIcon name={app.icon} className="h-7 w-7" />

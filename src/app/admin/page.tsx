@@ -1,7 +1,14 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { AppItem, CategoryItem, DEFAULT_CATEGORIES } from '@/types/app';
+import {
+  AppItem,
+  CategoryItem,
+  DEFAULT_CATEGORIES,
+  APP_COLOR_PRESETS,
+  getAppColorClasses,
+  getAppColorName,
+} from '@/types/app';
 import { DynamicIcon, POPULAR_ICONS, CATEGORY_POPULAR_ICONS } from '@/components/DynamicIcon';
 import Link from 'next/link';
 import {
@@ -12,6 +19,7 @@ import {
   Database,
   AlertTriangle,
   CheckCircle2,
+  Check,
   RefreshCw,
   ExternalLink,
   Save,
@@ -94,6 +102,7 @@ export default function AdminPage() {
       url: '',
       category: defaultCategory,
       icon: 'Megaphone',
+      color: 'sky',
       status: 'active',
       order: apps.length + 1,
       department: 'ฝ่ายการประชาสัมพันธ์',
@@ -104,7 +113,7 @@ export default function AdminPage() {
   };
 
   const handleEditApp = (app: AppItem) => {
-    setEditingApp({ ...app });
+    setEditingApp({ ...app, color: app.color || 'sky' });
     setIsAppModalOpen(true);
   };
 
@@ -506,7 +515,7 @@ export default function AdminPage() {
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-100 text-sky-700 shrink-0">
+                            <div className={`flex h-9 w-9 items-center justify-center rounded-lg text-white shadow-xs shrink-0 ${getAppColorClasses(app.color).gradient}`}>
                               <DynamicIcon name={app.icon} className="h-5 w-5" />
                             </div>
                             <div>
@@ -810,51 +819,107 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Icon Picker for Apps */}
-              <div className="pt-1">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block font-medium text-slate-700">
-                    เลือกไอคอนแอปพลิเคชัน <span className="text-slate-400 font-normal">({POPULAR_ICONS.length} ตัวเลือกยอดนิยม)</span>
-                  </label>
-                  <div className="flex items-center gap-1.5 bg-sky-50 text-sky-700 px-2.5 py-1 rounded-lg border border-sky-200/60 text-[11px] font-medium">
-                    <DynamicIcon name={editingApp.icon || 'Globe'} className="h-4 w-4" />
-                    <span>ไอคอนที่เลือก: <strong>{editingApp.icon || 'Globe'}</strong></span>
+              {/* Icon & Color Picker for Apps */}
+              <div className="pt-2 border-t border-slate-100 space-y-3">
+                {/* Header: Title + Live Preview Box */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="block font-semibold text-slate-800 text-xs">
+                      ไอคอนและโทนสีของแอปพลิเคชัน
+                    </label>
+                    <span className="text-[11px] text-slate-500">เลือกไอคอนและชุดสีที่ต้องการแสดงบนการ์ดระบบ</span>
+                  </div>
+
+                  {/* Live Preview Badge */}
+                  <div className="flex items-center gap-2 rounded-xl border border-slate-200/80 bg-slate-50 px-3 py-1.5 shadow-2xs">
+                    <div
+                      className={`flex h-8 w-8 items-center justify-center rounded-lg text-white shadow-xs transition-all ${
+                        getAppColorClasses(editingApp.color).gradient
+                      }`}
+                    >
+                      <DynamicIcon name={editingApp.icon || 'Globe'} className="h-4.5 w-4.5" />
+                    </div>
+                    <div className="text-left text-[11px]">
+                      <div className="font-semibold text-slate-800 leading-tight">
+                        {editingApp.icon || 'Globe'}
+                      </div>
+                      <div className="text-slate-400 text-[10px] leading-tight">
+                        {getAppColorName(editingApp.color)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Color Swatches */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block font-medium text-slate-700 text-[11px]">
+                      เลือกโทนสีไอคอน: <span className="font-semibold text-slate-900">{getAppColorName(editingApp.color)}</span>
+                    </label>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 p-2.5 bg-slate-50/80 border border-slate-200/80 rounded-xl">
+                    {APP_COLOR_PRESETS.map((preset) => {
+                      const isSelected = (editingApp.color || 'sky') === preset.id;
+                      return (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => setEditingApp({ ...editingApp, color: preset.id })}
+                          title={preset.name}
+                          className={`group relative flex items-center justify-center h-7 w-7 rounded-full transition-all ${
+                            isSelected
+                              ? 'ring-2 ring-offset-2 ring-slate-800 scale-110 shadow-sm'
+                              : 'hover:scale-105 opacity-80 hover:opacity-100'
+                          }`}
+                          style={{ backgroundColor: preset.bgHex }}
+                        >
+                          {isSelected && (
+                            <Check className="h-3.5 w-3.5 text-white drop-shadow-sm stroke-[3]" />
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
                 {/* Interactive Icon Grid */}
-                <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 max-h-52 overflow-y-auto p-2.5 bg-slate-50 border border-slate-200 rounded-xl scrollbar-thin">
-                  {POPULAR_ICONS.map((iconName) => {
-                    const isSelected = (editingApp.icon || 'Globe') === iconName;
-                    return (
-                      <button
-                        key={iconName}
-                        type="button"
-                        onClick={() => setEditingApp({ ...editingApp, icon: iconName })}
-                        className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all ${
-                          isSelected
-                            ? 'bg-sky-500 text-white border-sky-600 shadow-sm ring-2 ring-sky-300 scale-95 font-semibold'
-                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
-                        }`}
-                        title={iconName}
-                      >
-                        <DynamicIcon name={iconName} className="h-5 w-5 mb-1 shrink-0" />
-                        <span className="truncate w-full text-center text-[10px]">{iconName}</span>
-                      </button>
-                    );
-                  })}
-                </div>
+                <div>
+                  <label className="block font-medium text-slate-700 mb-1.5 text-[11px]">
+                    เลือกไอคอน: <span className="text-slate-400 font-normal">({POPULAR_ICONS.length} ตัวเลือกยอดนิยม)</span>
+                  </label>
+                  <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 max-h-48 overflow-y-auto p-2.5 bg-slate-50 border border-slate-200 rounded-xl scrollbar-thin">
+                    {POPULAR_ICONS.map((iconName) => {
+                      const isSelected = (editingApp.icon || 'Globe') === iconName;
+                      return (
+                        <button
+                          key={iconName}
+                          type="button"
+                          onClick={() => setEditingApp({ ...editingApp, icon: iconName })}
+                          className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all ${
+                            isSelected
+                              ? `${getAppColorClasses(editingApp.color).gradient} text-white border-transparent shadow-sm ring-2 ring-offset-1 ring-slate-400 scale-95 font-semibold`
+                              : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                          }`}
+                          title={iconName}
+                        >
+                          <DynamicIcon name={iconName} className="h-5 w-5 mb-1 shrink-0" />
+                          <span className="truncate w-full text-center text-[10px]">{iconName}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
 
-                {/* Custom icon or image URL fallback */}
-                <div className="mt-2.5 flex items-center gap-2">
-                  <span className="text-[11px] text-slate-500 shrink-0">หรือระบุชื่อไอคอน / URL เอง:</span>
-                  <input
-                    type="text"
-                    value={editingApp.icon || ''}
-                    onChange={(e) => setEditingApp({ ...editingApp, icon: e.target.value })}
-                    placeholder="เช่น Megaphone, Camera หรือ https://..."
-                    className="flex-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs focus:border-sky-500 focus:outline-none"
-                  />
+                  {/* Custom icon or image URL fallback */}
+                  <div className="mt-2.5 flex items-center gap-2">
+                    <span className="text-[11px] text-slate-500 shrink-0">หรือระบุชื่อไอคอน / URL เอง:</span>
+                    <input
+                      type="text"
+                      value={editingApp.icon || ''}
+                      onChange={(e) => setEditingApp({ ...editingApp, icon: e.target.value })}
+                      placeholder="เช่น Megaphone, Camera หรือ https://..."
+                      className="flex-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs focus:border-sky-500 focus:outline-none"
+                    />
+                  </div>
                 </div>
               </div>
 

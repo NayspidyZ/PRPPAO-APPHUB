@@ -49,6 +49,7 @@ export async function fetchAllApps(): Promise<{ apps: AppItem[]; isMock: boolean
         url: String(item.url || item.Url || item.URL || '#'),
         category: String(item.category || item.Category || 'ทั่วไป'),
         icon: String(item.icon || item.Icon || 'Globe'),
+        color: String(item.color || item.Color || 'sky'),
         status: (item.status || item.Status || 'active').toLowerCase() === 'maintenance' ? 'maintenance' : 'active',
         order: Number(item.order || item.Order || 0),
         tags: item.tags ? (typeof item.tags === 'string' ? item.tags.split(',').map((s: string) => s.trim()) : item.tags) : [],
