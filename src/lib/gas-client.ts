@@ -53,6 +53,7 @@ export async function fetchAllApps(): Promise<{ apps: AppItem[]; isMock: boolean
         order: Number(item.order || item.Order || 0),
         tags: item.tags ? (typeof item.tags === 'string' ? item.tags.split(',').map((s: string) => s.trim()) : item.tags) : [],
         department: String(item.department || item.Department || ''),
+        clicks: Number(item.clicks || item.Clicks || 0),
         createdAt: item.createdAt || item.CreatedAt || '',
         updatedAt: item.updatedAt || item.UpdatedAt || '',
       }));
@@ -206,6 +207,40 @@ export async function deleteGasApp(id: string): Promise<ApiResponse<null>> {
       status: 'error',
       message: 'เกิดข้อผิดพลาดในการลบ: ' + error.message,
     };
+  }
+}
+
+/**
+ * เพิ่มสถิติการคลิกเข้าใช้งานแอปพลิเคชัน (+1 Click)
+ */
+export async function incrementAppClick(id: string): Promise<{ success: boolean; clicks: number }> {
+  if (isUsingMock()) {
+    const app = inMemoryMockApps.find((a) => a.id === id);
+    if (app) {
+      app.clicks = (app.clicks || 0) + 1;
+      return { success: true, clicks: app.clicks };
+    }
+    return { success: false, clicks: 0 };
+  }
+
+  try {
+    const response = await fetch(getGasUrl()!, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'INCREMENT_CLICK',
+        id,
+      }),
+    });
+
+    const result = await response.json();
+    return {
+      success: result.status === 'success',
+      clicks: Number(result.clicks || 0),
+    };
+  } catch (error) {
+    console.error('[GAS] Error incrementing click:', error);
+    return { success: false, clicks: 0 };
   }
 }
 

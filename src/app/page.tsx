@@ -6,7 +6,7 @@ import { Header } from '@/components/Header';
 import { AppGrid } from '@/components/AppGrid';
 import { Footer } from '@/components/Footer';
 import { AdminLoginModal } from '@/components/AdminLoginModal';
-import { Loader2, RefreshCw, AlertCircle, ArrowUpRight, Sparkles } from 'lucide-react';
+import { Loader2, RefreshCw, AlertCircle, ArrowUpRight, Sparkles, Flame } from 'lucide-react';
 import Link from 'next/link';
 
 export default function HomePage() {
@@ -16,6 +16,7 @@ export default function HomePage() {
   const [isMock, setIsMock] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ทั้งหมด');
+  const [sortBy, setSortBy] = useState<'default' | 'popular'>('default');
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
 
   // Fetch apps & categories from API
@@ -67,9 +68,9 @@ export default function HomePage() {
     return list;
   }, [categories, apps]);
 
-  // Filter apps by search query and category
+  // Filter apps by search query and category, then sort
   const filteredApps = useMemo(() => {
-    return apps.filter((app) => {
+    const list = apps.filter((app) => {
       // Category filter
       if (selectedCategory !== 'ทั้งหมด' && app.category !== selectedCategory) {
         return false;
@@ -86,7 +87,13 @@ export default function HomePage() {
 
       return inName || inDesc || inCategory || inDept || inTags;
     });
-  }, [apps, searchQuery, selectedCategory]);
+
+    if (sortBy === 'popular') {
+      return [...list].sort((a, b) => (b.clicks || 0) - (a.clicks || 0));
+    }
+
+    return list;
+  }, [apps, searchQuery, selectedCategory, sortBy]);
 
   const totalApps = apps.length;
   const activeApps = apps.filter((a) => a.status === 'active').length;
@@ -129,8 +136,8 @@ export default function HomePage() {
 
       {/* Main Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Results summary bar */}
-        <div className="flex items-center justify-between mb-6">
+        {/* Results summary bar & Sort Controls */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div className="flex items-center gap-2">
             <h2 className="text-base sm:text-lg font-bold text-slate-800">
               {selectedCategory === 'ทั้งหมด' ? 'แอปพลิเคชันทั้งหมด' : `หมวดหมู่: ${selectedCategory}`}
@@ -140,15 +147,44 @@ export default function HomePage() {
             </span>
           </div>
 
-          <button
-            onClick={loadData}
-            disabled={loading}
-            title="รีเฟรชข้อมูล"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-2xs disabled:opacity-50"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">อัปเดตข้อมูล</span>
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Popular / Default Sort Toggle */}
+            <div className="inline-flex rounded-xl border border-slate-200 bg-slate-100/90 p-0.5 text-xs font-medium text-slate-600">
+              <button
+                type="button"
+                onClick={() => setSortBy('default')}
+                className={`rounded-lg px-2.5 py-1.5 transition-all ${
+                  sortBy === 'default'
+                    ? 'bg-white text-slate-900 font-semibold shadow-xs'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                ลำดับปกติ
+              </button>
+              <button
+                type="button"
+                onClick={() => setSortBy('popular')}
+                className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 transition-all ${
+                  sortBy === 'popular'
+                    ? 'bg-white text-amber-600 font-semibold shadow-xs'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Flame className={`h-3.5 w-3.5 ${sortBy === 'popular' ? 'text-amber-500 fill-amber-500' : 'text-slate-400'}`} />
+                <span>ยอดนิยม</span>
+              </button>
+            </div>
+
+            <button
+              onClick={loadData}
+              disabled={loading}
+              title="รีเฟรชข้อมูล"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-2xs disabled:opacity-50"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">อัปเดตข้อมูล</span>
+            </button>
+          </div>
         </div>
 
         {/* Apps Grid or Loading Skeleton */}

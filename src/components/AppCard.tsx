@@ -1,9 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppItem } from '@/types/app';
 import { DynamicIcon } from './DynamicIcon';
-import { ExternalLink, AlertTriangle, CheckCircle2, Building2 } from 'lucide-react';
+import { ExternalLink, AlertTriangle, CheckCircle2, Building2, MousePointerClick } from 'lucide-react';
 
 interface AppCardProps {
   app: AppItem;
@@ -13,6 +13,11 @@ interface AppCardProps {
 
 export const AppCard: React.FC<AppCardProps> = ({ app, onEdit, isAdmin = false }) => {
   const isMaintenance = app.status === 'maintenance';
+  const [clickCount, setClickCount] = useState<number>(app.clicks || 0);
+
+  useEffect(() => {
+    setClickCount(app.clicks || 0);
+  }, [app.clicks]);
 
   const handleClick = (e: React.MouseEvent) => {
     if (isMaintenance) {
@@ -21,8 +26,19 @@ export const AppCard: React.FC<AppCardProps> = ({ app, onEdit, isAdmin = false }
       );
       if (!confirmOpen) {
         e.preventDefault();
+        return;
       }
     }
+
+    // Optimistically increment click count
+    setClickCount((prev) => prev + 1);
+
+    // Track click via API
+    fetch(`/api/apps/${app.id}/click`, {
+      method: 'POST',
+    }).catch((err) => {
+      console.error('Failed to track click:', err);
+    });
   };
 
   return (
@@ -81,23 +97,33 @@ export const AppCard: React.FC<AppCardProps> = ({ app, onEdit, isAdmin = false }
           {app.description || 'ไม่มีคำอธิบายเพิ่มเติม'}
         </p>
 
-        {/* Tags */}
-        {app.tags && app.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-3">
-            {app.tags.slice(0, 3).map((tag, idx) => (
-              <span
-                key={idx}
-                className="text-[10px] text-slate-500 bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5"
-              >
-                #{tag}
-              </span>
-            ))}
+        {/* Tags & Click Stats */}
+        <div className="flex items-center justify-between gap-2 mt-4 pt-3 border-t border-slate-100/90 text-xs">
+          <div
+            className="inline-flex items-center gap-1.5 font-medium text-slate-600 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200/60 transition-colors group-hover:border-sky-200"
+            title="สถิติจำนวนครั้งที่มีการคลิกเข้าใช้งานระบบนี้"
+          >
+            <MousePointerClick className="h-3.5 w-3.5 text-sky-600 shrink-0" />
+            <span>เข้าใช้ <strong className="text-slate-800 font-semibold">{clickCount.toLocaleString()}</strong> ครั้ง</span>
           </div>
-        )}
+
+          {app.tags && app.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 justify-end">
+              {app.tags.slice(0, 2).map((tag, idx) => (
+                <span
+                  key={idx}
+                  className="text-[10px] text-slate-500 bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Card Footer: Buttons */}
-      <div className="mt-5 pt-3 border-t border-slate-100 flex items-center gap-2">
+      <div className="mt-3 flex items-center gap-2">
         <a
           href={app.url}
           target="_blank"

@@ -23,6 +23,7 @@ import {
   FolderPlus,
   LayoutGrid,
   FolderTree,
+  MousePointerClick,
 } from 'lucide-react';
 
 export default function AdminPage() {
@@ -97,6 +98,7 @@ export default function AdminPage() {
       order: apps.length + 1,
       department: 'ฝ่ายการประชาสัมพันธ์',
       tags: [],
+      clicks: 0,
     });
     setIsAppModalOpen(true);
   };
@@ -477,6 +479,7 @@ export default function AdminPage() {
                     <th className="py-3.5 px-4">ลำดับ</th>
                     <th className="py-3.5 px-4">ไอคอน / ชื่อแอปพลิเคชัน</th>
                     <th className="py-3.5 px-4">หมวดหมู่</th>
+                    <th className="py-3.5 px-4">ยอดเข้าใช้ (ครั้ง)</th>
                     <th className="py-3.5 px-4">หน่วยงานรับผิดชอบ</th>
                     <th className="py-3.5 px-4">สถานะ</th>
                     <th className="py-3.5 px-4 text-center">จัดการ</th>
@@ -485,13 +488,13 @@ export default function AdminPage() {
                 <tbody className="divide-y divide-slate-100 font-normal">
                   {loading ? (
                     <tr>
-                      <td colSpan={6} className="py-10 text-center text-slate-400">
+                      <td colSpan={7} className="py-10 text-center text-slate-400">
                         กำลังโหลดข้อมูล...
                       </td>
                     </tr>
                   ) : filteredApps.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-10 text-center text-slate-400">
+                      <td colSpan={7} className="py-10 text-center text-slate-400">
                         ไม่พบข้อมูลแอปพลิเคชัน
                       </td>
                     </tr>
@@ -525,6 +528,12 @@ export default function AdminPage() {
                         <td className="py-3 px-4">
                           <span className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-700">
                             {app.category}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="inline-flex items-center gap-1.5 font-medium text-slate-700 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200/60">
+                            <MousePointerClick className="h-3 w-3 text-sky-600" />
+                            <span>{(app.clicks || 0).toLocaleString()}</span>
                           </span>
                         </td>
                         <td className="py-3 px-4 text-slate-600">
@@ -764,7 +773,7 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {/* Department */}
                 <div>
                   <label className="block font-medium text-slate-700 mb-1">ฝ่าย / หน่วยงานรับผิดชอบ</label>
@@ -779,11 +788,23 @@ export default function AdminPage() {
 
                 {/* Order */}
                 <div>
-                  <label className="block font-medium text-slate-700 mb-1">ลำดับการแสดงผล (Order)</label>
+                  <label className="block font-medium text-slate-700 mb-1">ลำดับแสดงผล (Order)</label>
                   <input
                     type="number"
                     value={editingApp.order ?? 1}
                     onChange={(e) => setEditingApp({ ...editingApp, order: parseInt(e.target.value, 10) || 1 })}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                  />
+                </div>
+
+                {/* Clicks */}
+                <div>
+                  <label className="block font-medium text-slate-700 mb-1">สถิติเข้าใช้ (ครั้ง)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editingApp.clicks ?? 0}
+                    onChange={(e) => setEditingApp({ ...editingApp, clicks: parseInt(e.target.value, 10) || 0 })}
                     className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
                   />
                 </div>

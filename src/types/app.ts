@@ -12,6 +12,7 @@ export interface AppItem {
   tags?: string[];
   department?: string;
   contactPerson?: string;
+  clicks?: number;
   createdAt?: string;
   updatedAt?: string;
 }

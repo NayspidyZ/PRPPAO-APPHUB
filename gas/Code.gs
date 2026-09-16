@@ -31,6 +31,7 @@ const APPS_HEADERS = [
   "order",
   "tags",
   "department",
+  "clicks",
   "createdAt",
   "updatedAt"
 ];
@@ -78,6 +79,7 @@ function setupSheet() {
       1,
       "ข่าวสาร,ประกาศ,แถลงข่าว",
       "ฝ่ายการประชาสัมพันธ์",
+      342,
       new Date().toISOString(),
       new Date().toISOString()
     ]);
@@ -92,6 +94,7 @@ function setupSheet() {
       2,
       "รูปภาพ,วิดีโอ,คลังภาพ",
       "กลุ่มงานผลิตสื่อ",
+      285,
       new Date().toISOString(),
       new Date().toISOString()
     ]);
@@ -192,6 +195,7 @@ function doPost(e) {
         app.order || sheet.getLastRow(),
         Array.isArray(app.tags) ? app.tags.join(",") : (app.tags || ""),
         app.department || "",
+        Number(app.clicks || 0),
         now,
         now
       ]);
@@ -199,7 +203,27 @@ function doPost(e) {
       return responseJson({
         status: "success",
         message: "บันทึกข้อมูลเรียบร้อย",
-        data: { ...app, id: newId, createdAt: now, updatedAt: now }
+        data: { ...app, id: newId, clicks: Number(app.clicks || 0), createdAt: now, updatedAt: now }
+      });
+    }
+
+    if (action === "INCREMENT_CLICK") {
+      const sheet = getOrCreateSheet(SHEET_APPS, APPS_HEADERS);
+      const targetId = body.id;
+      const rowIdx = findRowIndexById(sheet, targetId);
+
+      if (rowIdx === -1) {
+        return responseJson({ status: "error", message: "ไม่พบรหัสแอป: " + targetId });
+      }
+
+      const clickColIdx = APPS_HEADERS.indexOf("clicks") + 1;
+      const currentClicks = Number(sheet.getRange(rowIdx, clickColIdx).getValue()) || 0;
+      const newClicks = currentClicks + 1;
+      sheet.getRange(rowIdx, clickColIdx).setValue(newClicks);
+
+      return responseJson({
+        status: "success",
+        clicks: newClicks
       });
     }
 
