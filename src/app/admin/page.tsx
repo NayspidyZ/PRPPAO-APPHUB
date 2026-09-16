@@ -786,40 +786,51 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Icon selection */}
-              <div>
-                <label className="block font-medium text-slate-700 mb-1">
-                  ไอคอน (ชื่อไอคอน Lucide หรือ URL รูปภาพ)
-                </label>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-700 shrink-0">
-                    <DynamicIcon name={editingApp.icon || 'Globe'} className="h-5 w-5" />
+              {/* Icon Picker for Apps */}
+              <div className="pt-1">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block font-medium text-slate-700">
+                    เลือกไอคอนแอปพลิเคชัน <span className="text-slate-400 font-normal">({POPULAR_ICONS.length} ตัวเลือกยอดนิยม)</span>
+                  </label>
+                  <div className="flex items-center gap-1.5 bg-sky-50 text-sky-700 px-2.5 py-1 rounded-lg border border-sky-200/60 text-[11px] font-medium">
+                    <DynamicIcon name={editingApp.icon || 'Globe'} className="h-4 w-4" />
+                    <span>ไอคอนที่เลือก: <strong>{editingApp.icon || 'Globe'}</strong></span>
                   </div>
+                </div>
+
+                {/* Interactive Icon Grid */}
+                <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 max-h-52 overflow-y-auto p-2.5 bg-slate-50 border border-slate-200 rounded-xl scrollbar-thin">
+                  {POPULAR_ICONS.map((iconName) => {
+                    const isSelected = (editingApp.icon || 'Globe') === iconName;
+                    return (
+                      <button
+                        key={iconName}
+                        type="button"
+                        onClick={() => setEditingApp({ ...editingApp, icon: iconName })}
+                        className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all ${
+                          isSelected
+                            ? 'bg-sky-500 text-white border-sky-600 shadow-sm ring-2 ring-sky-300 scale-95 font-semibold'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                        }`}
+                        title={iconName}
+                      >
+                        <DynamicIcon name={iconName} className="h-5 w-5 mb-1 shrink-0" />
+                        <span className="truncate w-full text-center text-[10px]">{iconName}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Custom icon or image URL fallback */}
+                <div className="mt-2.5 flex items-center gap-2">
+                  <span className="text-[11px] text-slate-500 shrink-0">หรือระบุชื่อไอคอน / URL เอง:</span>
                   <input
                     type="text"
                     value={editingApp.icon || ''}
                     onChange={(e) => setEditingApp({ ...editingApp, icon: e.target.value })}
                     placeholder="เช่น Megaphone, Camera หรือ https://..."
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none"
+                    className="flex-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs focus:border-sky-500 focus:outline-none"
                   />
-                </div>
-
-                <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                  <span className="text-[10px] text-slate-400 mr-1">ไอคอนยอดนิยม:</span>
-                  {POPULAR_ICONS.slice(0, 10).map((iconName) => (
-                    <button
-                      key={iconName}
-                      type="button"
-                      onClick={() => setEditingApp({ ...editingApp, icon: iconName })}
-                      className={`px-2 py-0.5 rounded border text-[10px] transition-colors ${
-                        editingApp.icon === iconName
-                          ? 'bg-sky-500 text-white border-sky-500'
-                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                      }`}
-                    >
-                      {iconName}
-                    </button>
-                  ))}
                 </div>
               </div>
 

@@ -50,10 +50,17 @@ export const POPULAR_ICONS = [
   'Bell',
   'MessageSquare',
   'Tv',
-  'Smartphone',
   'Printer',
   'Search',
   'Link',
+  'Database',
+  'Monitor',
+  'Send',
+  'Sparkles',
+  'ShieldCheck',
+  'Heart',
+  'Star',
+  'Building2',
 ];
 
 export const CATEGORY_POPULAR_ICONS = [
