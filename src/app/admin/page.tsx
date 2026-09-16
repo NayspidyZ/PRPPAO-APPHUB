@@ -282,7 +282,7 @@ export default function AdminPage() {
             </Link>
             <div className="h-4 w-px bg-slate-200"></div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-slate-900 text-sm sm:text-base">ระบบจัดการ PRPPAO APP HUB</span>
+              <span className="font-bold text-slate-900 text-sm sm:text-base">ระบบจัดการ PR-PPAO APP HUB</span>
               <span className="rounded bg-sky-100 text-sky-800 text-[10px] font-semibold px-2 py-0.5">Admin</span>
             </div>
           </div>

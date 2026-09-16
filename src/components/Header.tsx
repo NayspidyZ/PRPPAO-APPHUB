@@ -42,7 +42,7 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xl font-bold tracking-tight text-white">PRPPAO APP HUB</span>
+                <span className="text-xl font-bold tracking-tight text-white">PR-PPAO APP HUB</span>
                 {isMock ? (
                   <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/20 px-2 py-0.5 text-[11px] font-medium text-amber-300 border border-amber-400/30">
                     <AlertCircle className="h-3 w-3" />

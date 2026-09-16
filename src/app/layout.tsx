@@ -10,9 +10,9 @@ const prompt = Prompt({
 });
 
 export const metadata: Metadata = {
-  title: 'PRPPAO APP HUB | ศูนย์รวมแอปพลิเคชัน ฝ่ายประชาสัมพันธ์ อบจ.',
+  title: 'PR-PPAO APP HUB | ศูนย์รวมแอปพลิเคชัน ฝ่ายประชาสัมพันธ์ อบจ.',
   description: 'ศูนย์รวมแอปพลิเคชันและระบบงานของฝ่ายประชาสัมพันธ์ องค์การบริหารส่วนจังหวัด เข้าถึงเครื่องมือ คลังภาพ และระบบงานได้ในที่เดียว',
-  keywords: ['PRPPAO', 'App Hub', 'ประชาสัมพันธ์', 'อบจ', 'พอร์ทัลแอปพลิเคชัน'],
+  keywords: ['PR-PPAO', 'PRPPAO', 'App Hub', 'ประชาสัมพันธ์', 'อบจ', 'พอร์ทัลแอปพลิเคชัน'],
 };
 
 export default function RootLayout({
