@@ -74,7 +74,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="pt-8 pb-6 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white">
-              พอร์ทัลศูนย์รวมแอปพลิเคชัน
+              ศูนย์รวมแอปพลิเคชั่น ฝ่ายการประชาสัมพันธ์ อบจ.ภูเก็ต
             </h1>
             <p className="mt-2 text-sm sm:text-base text-sky-100/80 max-w-2xl leading-relaxed">
               เข้าถึงทุกระบบงาน เครื่องมือผลิตสื่อ คลังภาพ และบริการประชาสัมพันธ์ของ อบจ.ภูเก็ต ได้สะดวกรวดเร็วในจุดเดียว
