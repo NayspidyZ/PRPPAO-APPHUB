@@ -673,280 +673,303 @@ export default function AdminPage() {
       </main>
 
       {/* ========================================================================= */}
-      {/* MODAL 1: ADD / EDIT APP */}
+      {/* MODAL 1: ADD / EDIT APP (Horizontal 2-Column Responsive Layout) */}
       {/* ========================================================================= */}
       {isAppModalOpen && editingApp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="relative w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 my-8">
-            <button
-              onClick={() => setIsAppModalOpen(false)}
-              className="absolute right-4 top-4 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-            >
-              <X className="h-5 w-5" />
-            </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-3 sm:p-4 md:p-6 overflow-y-auto">
+          <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl bg-white shadow-2xl border border-slate-100 overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150">
+            {/* 1. Modal Header (Fixed / Sticky) */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-600 shrink-0">
+                  <Layers className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    {editingApp.id ? 'แก้ไขข้อมูลแอปพลิเคชัน' : 'เพิ่มแอปพลิเคชันใหม่'}
+                  </h3>
+                  <p className="text-xs text-slate-500">ข้อมูลจะถูกซิงก์ไปยัง Google Sheet โดยอัตโนมัติ</p>
+                </div>
+              </div>
 
-            <div className="flex items-center gap-3 mb-5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
-                <Layers className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-slate-900">
-                  {editingApp.id ? 'แก้ไขข้อมูลแอปพลิเคชัน' : 'เพิ่มแอปพลิเคชันใหม่'}
-                </h3>
-                <p className="text-xs text-slate-500">ข้อมูลจะถูกซิงก์ไปยัง Google Sheet โดยอัตโนมัติ</p>
-              </div>
+              <button
+                type="button"
+                onClick={() => setIsAppModalOpen(false)}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+                title="ปิด"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
 
-            <form onSubmit={handleSaveApp} className="space-y-4 text-xs">
-              {/* Name */}
-              <div>
-                <label className="block font-medium text-slate-700 mb-1">
-                  ชื่อแอปพลิเคชัน / ระบบ <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={editingApp.name || ''}
-                  onChange={(e) => setEditingApp({ ...editingApp, name: e.target.value })}
-                  placeholder="เช่น ระบบเผยแพร่ข่าวและประกาศ อบจ."
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
-                />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block font-medium text-slate-700 mb-1">รายละเอียดสั้นๆ</label>
-                <textarea
-                  rows={2}
-                  value={editingApp.description || ''}
-                  onChange={(e) => setEditingApp({ ...editingApp, description: e.target.value })}
-                  placeholder="คำอธิบายฟังก์ชัน หรือวัตถุประสงค์การใช้งาน..."
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
-                />
-              </div>
-
-              {/* URL */}
-              <div>
-                <label className="block font-medium text-slate-700 mb-1">
-                  ลิงก์เข้าใช้งาน (URL) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="url"
-                  required
-                  value={editingApp.url || ''}
-                  onChange={(e) => setEditingApp({ ...editingApp, url: e.target.value })}
-                  placeholder="https://..."
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Category Dropdown (Dynamically from categories state!) */}
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block font-medium text-slate-700">หมวดหมู่</label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsAppModalOpen(false);
-                        setActiveTab('categories');
-                        handleAddNewCategory();
-                      }}
-                      className="text-[10px] text-sky-600 hover:underline"
-                    >
-                      + เพิ่มหมวดใหม่
-                    </button>
+            {/* 2. Modal Body (Scrollable inside max-h) */}
+            <form onSubmit={handleSaveApp} id="app-modal-form" className="flex-1 overflow-y-auto p-5 sm:p-6 text-xs">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                
+                {/* ---------------- LEFT COLUMN: General Form Fields ---------------- */}
+                <div className="space-y-3.5">
+                  <div className="flex items-center gap-2 pb-1 border-b border-slate-100">
+                    <span className="font-bold text-slate-800 text-xs">ข้อมูลระบบงาน</span>
                   </div>
-                  <select
-                    value={editingApp.category || (categories[0]?.name ?? 'ทั่วไป')}
-                    onChange={(e) => setEditingApp({ ...editingApp, category: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
-                  >
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.name}>
-                        {cat.name}
-                      </option>
-                    ))}
-                    {categories.length === 0 && <option value="ทั่วไป">ทั่วไป</option>}
-                  </select>
-                </div>
 
-                {/* Status */}
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">สถานะระบบ</label>
-                  <select
-                    value={editingApp.status || 'active'}
-                    onChange={(e) => setEditingApp({ ...editingApp, status: e.target.value as any })}
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
-                  >
-                    <option value="active">เปิดใช้งานปกติ (Active)</option>
-                    <option value="maintenance">ปิดปรับปรุงชั่วคราว (Maintenance)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {/* Department */}
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">ฝ่าย / หน่วยงานรับผิดชอบ</label>
-                  <input
-                    type="text"
-                    value={editingApp.department || ''}
-                    onChange={(e) => setEditingApp({ ...editingApp, department: e.target.value })}
-                    placeholder="เช่น ฝ่ายการประชาสัมพันธ์"
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
-                  />
-                </div>
-
-                {/* Order */}
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">ลำดับแสดงผล (Order)</label>
-                  <input
-                    type="number"
-                    value={editingApp.order ?? 1}
-                    onChange={(e) => setEditingApp({ ...editingApp, order: parseInt(e.target.value, 10) || 1 })}
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
-                  />
-                </div>
-
-                {/* Clicks */}
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1">สถิติเข้าใช้ (ครั้ง)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={editingApp.clicks ?? 0}
-                    onChange={(e) => setEditingApp({ ...editingApp, clicks: parseInt(e.target.value, 10) || 0 })}
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
-                  />
-                </div>
-              </div>
-
-              {/* Icon & Color Picker for Apps */}
-              <div className="pt-2 border-t border-slate-100 space-y-3">
-                {/* Header: Title + Live Preview Box */}
-                <div className="flex items-center justify-between">
+                  {/* Name */}
                   <div>
-                    <label className="block font-semibold text-slate-800 text-xs">
-                      ไอคอนและโทนสีของแอปพลิเคชัน
+                    <label className="block font-medium text-slate-700 mb-1">
+                      ชื่อแอปพลิเคชัน / ระบบ <span className="text-red-500">*</span>
                     </label>
-                    <span className="text-[11px] text-slate-500">เลือกไอคอนและชุดสีที่ต้องการแสดงบนการ์ดระบบ</span>
+                    <input
+                      type="text"
+                      required
+                      value={editingApp.name || ''}
+                      onChange={(e) => setEditingApp({ ...editingApp, name: e.target.value })}
+                      placeholder="เช่น ระบบเผยแพร่ข่าวและประกาศ อบจ."
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                    />
                   </div>
 
-                  {/* Live Preview Badge */}
-                  <div className="flex items-center gap-2 rounded-xl border border-slate-200/80 bg-slate-50 px-3 py-1.5 shadow-2xs">
+                  {/* URL */}
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">
+                      ลิงก์เข้าใช้งาน (URL) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="url"
+                      required
+                      value={editingApp.url || ''}
+                      onChange={(e) => setEditingApp({ ...editingApp, url: e.target.value })}
+                      placeholder="https://..."
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">รายละเอียดสั้นๆ</label>
+                    <textarea
+                      rows={2}
+                      value={editingApp.description || ''}
+                      onChange={(e) => setEditingApp({ ...editingApp, description: e.target.value })}
+                      placeholder="คำอธิบายฟังก์ชัน หรือวัตถุประสงค์การใช้งาน..."
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 resize-none"
+                    />
+                  </div>
+
+                  {/* Category & Status (2 columns) */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block font-medium text-slate-700">หมวดหมู่</label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsAppModalOpen(false);
+                            setActiveTab('categories');
+                            handleAddNewCategory();
+                          }}
+                          className="text-[10px] text-sky-600 hover:underline"
+                        >
+                          + เพิ่มหมวดใหม่
+                        </button>
+                      </div>
+                      <select
+                        value={editingApp.category || (categories[0]?.name ?? 'ทั่วไป')}
+                        onChange={(e) => setEditingApp({ ...editingApp, category: e.target.value })}
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                      >
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.name}>
+                            {cat.name}
+                          </option>
+                        ))}
+                        {categories.length === 0 && <option value="ทั่วไป">ทั่วไป</option>}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-medium text-slate-700 mb-1">สถานะระบบ</label>
+                      <select
+                        value={editingApp.status || 'active'}
+                        onChange={(e) => setEditingApp({ ...editingApp, status: e.target.value as any })}
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                      >
+                        <option value="active">เปิดใช้งานปกติ (Active)</option>
+                        <option value="maintenance">ปิดปรับปรุงชั่วคราว (Maintenance)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Department */}
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1">ฝ่าย / หน่วยงานรับผิดชอบ</label>
+                    <input
+                      type="text"
+                      value={editingApp.department || ''}
+                      onChange={(e) => setEditingApp({ ...editingApp, department: e.target.value })}
+                      placeholder="เช่น ฝ่ายการประชาสัมพันธ์"
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                    />
+                  </div>
+
+                  {/* Order & Clicks (2 columns) */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-medium text-slate-700 mb-1">ลำดับแสดงผล (Order)</label>
+                      <input
+                        type="number"
+                        value={editingApp.order ?? 1}
+                        onChange={(e) => setEditingApp({ ...editingApp, order: parseInt(e.target.value, 10) || 1 })}
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-medium text-slate-700 mb-1">สถิติเข้าใช้ (ครั้ง)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={editingApp.clicks ?? 0}
+                        onChange={(e) => setEditingApp({ ...editingApp, clicks: parseInt(e.target.value, 10) || 0 })}
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* ---------------- RIGHT COLUMN: Icon & Color Palette ---------------- */}
+                <div className="space-y-3.5">
+                  <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+                    <span className="font-bold text-slate-800 text-xs">ไอคอนและโทนสี</span>
+                    
+                    {/* Selected badge */}
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg border border-slate-200/80 bg-slate-50">
+                      <div
+                        style={{ backgroundColor: getAppColorClasses(editingApp.color).bgHex }}
+                        className={`flex h-4.5 w-4.5 items-center justify-center rounded text-white shadow-2xs ${
+                          getAppColorClasses(editingApp.color).gradient
+                        }`}
+                      >
+                        <DynamicIcon name={editingApp.icon || 'Globe'} className="h-3 w-3" />
+                      </div>
+                      <span className="text-[10px] font-semibold text-slate-700">
+                        {getAppColorName(editingApp.color)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Color Swatches */}
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1 text-[11px]">
+                      เลือกโทนสีประจำแอป:
+                    </label>
+                    <div className="flex flex-wrap items-center gap-1.5 p-2 bg-slate-50/80 border border-slate-200/80 rounded-xl">
+                      {APP_COLOR_PRESETS.map((preset) => {
+                        const isSelected = (editingApp.color || 'sky') === preset.id;
+                        return (
+                          <button
+                            key={preset.id}
+                            type="button"
+                            onClick={() => setEditingApp({ ...editingApp, color: preset.id })}
+                            title={preset.name}
+                            className={`group relative flex items-center justify-center h-6 w-6 rounded-full transition-all ${
+                              isSelected
+                                ? 'ring-2 ring-offset-2 ring-slate-800 scale-110 shadow-sm'
+                                : 'hover:scale-105 opacity-80 hover:opacity-100'
+                            }`}
+                            style={{ backgroundColor: preset.bgHex }}
+                          >
+                            {isSelected && (
+                              <Check className="h-3 w-3 text-white drop-shadow-sm stroke-[3]" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Interactive Icon Grid */}
+                  <div>
+                    <label className="block font-medium text-slate-700 mb-1 text-[11px]">
+                      เลือกไอคอน: <span className="text-slate-400 font-normal">({POPULAR_ICONS.length} ตัวเลือกยอดนิยม)</span>
+                    </label>
+                    <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 max-h-52 overflow-y-auto p-2 bg-slate-50 border border-slate-200 rounded-xl scrollbar-thin">
+                      {POPULAR_ICONS.map((iconName) => {
+                        const isSelected = (editingApp.icon || 'Globe') === iconName;
+                        return (
+                          <button
+                            key={iconName}
+                            type="button"
+                            onClick={() => setEditingApp({ ...editingApp, icon: iconName })}
+                            style={isSelected ? { backgroundColor: getAppColorClasses(editingApp.color).bgHex } : undefined}
+                            className={`flex flex-col items-center justify-center p-1.5 rounded-lg border transition-all ${
+                              isSelected
+                                ? `${getAppColorClasses(editingApp.color).gradient} text-white border-transparent shadow-sm ring-2 ring-offset-1 ring-slate-400 scale-95 font-semibold`
+                                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                            }`}
+                            title={iconName}
+                          >
+                            <DynamicIcon name={iconName} className="h-4 w-4 mb-0.5 shrink-0" />
+                            <span className="truncate w-full text-center text-[9px]">{iconName}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Custom icon or image URL fallback */}
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="text-[10px] text-slate-500 shrink-0">หรือระบุชื่อ/URL:</span>
+                      <input
+                        type="text"
+                        value={editingApp.icon || ''}
+                        onChange={(e) => setEditingApp({ ...editingApp, icon: e.target.value })}
+                        placeholder="เช่น Megaphone หรือ https://..."
+                        className="flex-1 rounded-xl border border-slate-200 px-2.5 py-1 text-xs focus:border-sky-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Real-time Preview Widget */}
+                  <div className="rounded-xl border border-slate-200/90 bg-slate-50/70 p-3 flex items-center gap-3 shadow-2xs">
                     <div
                       style={{ backgroundColor: getAppColorClasses(editingApp.color).bgHex }}
-                      className={`flex h-8 w-8 items-center justify-center rounded-lg text-white shadow-xs transition-all ${
+                      className={`flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-sm shrink-0 transition-all ${
                         getAppColorClasses(editingApp.color).gradient
                       }`}
                     >
-                      <DynamicIcon name={editingApp.icon || 'Globe'} className="h-4.5 w-4.5" />
+                      <DynamicIcon name={editingApp.icon || 'Globe'} className="h-6 w-6" />
                     </div>
-                    <div className="text-left text-[11px]">
-                      <div className="font-semibold text-slate-800 leading-tight">
-                        {editingApp.icon || 'Globe'}
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold text-slate-900 truncate text-xs">
+                        {editingApp.name || 'ตัวอย่างชื่อระบบงาน'}
                       </div>
-                      <div className="text-slate-400 text-[10px] leading-tight">
-                        {getAppColorName(editingApp.color)}
+                      <div className="text-[10px] text-slate-500 truncate mt-0.5">
+                        {editingApp.department || 'ฝ่ายการประชาสัมพันธ์'} &bull; {editingApp.category || 'ทั่วไป'}
                       </div>
                     </div>
                   </div>
+
                 </div>
-
-                {/* Color Swatches */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block font-medium text-slate-700 text-[11px]">
-                      เลือกโทนสีไอคอน: <span className="font-semibold text-slate-900">{getAppColorName(editingApp.color)}</span>
-                    </label>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 p-2.5 bg-slate-50/80 border border-slate-200/80 rounded-xl">
-                    {APP_COLOR_PRESETS.map((preset) => {
-                      const isSelected = (editingApp.color || 'sky') === preset.id;
-                      return (
-                        <button
-                          key={preset.id}
-                          type="button"
-                          onClick={() => setEditingApp({ ...editingApp, color: preset.id })}
-                          title={preset.name}
-                          className={`group relative flex items-center justify-center h-7 w-7 rounded-full transition-all ${
-                            isSelected
-                              ? 'ring-2 ring-offset-2 ring-slate-800 scale-110 shadow-sm'
-                              : 'hover:scale-105 opacity-80 hover:opacity-100'
-                          }`}
-                          style={{ backgroundColor: preset.bgHex }}
-                        >
-                          {isSelected && (
-                            <Check className="h-3.5 w-3.5 text-white drop-shadow-sm stroke-[3]" />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Interactive Icon Grid */}
-                <div>
-                  <label className="block font-medium text-slate-700 mb-1.5 text-[11px]">
-                    เลือกไอคอน: <span className="text-slate-400 font-normal">({POPULAR_ICONS.length} ตัวเลือกยอดนิยม)</span>
-                  </label>
-                  <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 max-h-48 overflow-y-auto p-2.5 bg-slate-50 border border-slate-200 rounded-xl scrollbar-thin">
-                    {POPULAR_ICONS.map((iconName) => {
-                      const isSelected = (editingApp.icon || 'Globe') === iconName;
-                      return (
-                        <button
-                          key={iconName}
-                          type="button"
-                          onClick={() => setEditingApp({ ...editingApp, icon: iconName })}
-                          style={isSelected ? { backgroundColor: getAppColorClasses(editingApp.color).bgHex } : undefined}
-                          className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all ${
-                            isSelected
-                              ? `${getAppColorClasses(editingApp.color).gradient} text-white border-transparent shadow-sm ring-2 ring-offset-1 ring-slate-400 scale-95 font-semibold`
-                              : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
-                          }`}
-                          title={iconName}
-                        >
-                          <DynamicIcon name={iconName} className="h-5 w-5 mb-1 shrink-0" />
-                          <span className="truncate w-full text-center text-[10px]">{iconName}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Custom icon or image URL fallback */}
-                  <div className="mt-2.5 flex items-center gap-2">
-                    <span className="text-[11px] text-slate-500 shrink-0">หรือระบุชื่อไอคอน / URL เอง:</span>
-                    <input
-                      type="text"
-                      value={editingApp.icon || ''}
-                      onChange={(e) => setEditingApp({ ...editingApp, icon: e.target.value })}
-                      placeholder="เช่น Megaphone, Camera หรือ https://..."
-                      className="flex-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs focus:border-sky-500 focus:outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Form Buttons */}
-              <div className="flex gap-2 pt-4 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setIsAppModalOpen(false)}
-                  className="flex-1 rounded-xl border border-slate-200 py-2.5 font-medium text-slate-600 hover:bg-slate-50"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 py-2.5 font-medium text-white shadow-sm hover:bg-sky-700 disabled:opacity-50"
-                >
-                  <Save className="h-4 w-4" />
-                  <span>{saving ? 'กำลังบันทึก...' : 'บันทึกข้อมูล'}</span>
-                </button>
               </div>
             </form>
+
+            {/* 3. Modal Footer (Sticky / Fixed at Bottom) */}
+            <div className="flex items-center justify-end gap-2.5 px-6 py-3.5 bg-slate-50 border-t border-slate-100 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsAppModalOpen(false)}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 font-medium text-slate-600 hover:bg-slate-50 transition-colors text-xs"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="submit"
+                form="app-modal-form"
+                disabled={saving}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-sky-600 px-5 py-2 font-medium text-white shadow-sm hover:bg-sky-700 disabled:opacity-50 transition-all text-xs"
+              >
+                <Save className="h-3.5 w-3.5" />
+                <span>{saving ? 'กำลังบันทึก...' : 'บันทึกข้อมูล'}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -955,28 +978,34 @@ export default function AdminPage() {
       {/* MODAL 2: ADD / EDIT CATEGORY */}
       {/* ========================================================================= */}
       {isCatModalOpen && editingCategory && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 my-8">
-            <button
-              onClick={() => setIsCatModalOpen(false)}
-              className="absolute right-4 top-4 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-            >
-              <X className="h-5 w-5" />
-            </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
+          <div className="relative w-full max-w-xl max-h-[90vh] flex flex-col rounded-2xl bg-white shadow-2xl border border-slate-100 overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-150">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-600 shrink-0">
+                  <FolderTree className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    {editingCategory.id ? 'แก้ไขหมวดหมู่' : 'เพิ่มหมวดหมู่ใหม่'}
+                  </h3>
+                  <p className="text-xs text-slate-500">จัดการชื่อและลำดับการแสดงผลของหมวดหมู่</p>
+                </div>
+              </div>
 
-            <div className="flex items-center gap-3 mb-5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
-                <FolderTree className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-slate-900">
-                  {editingCategory.id ? 'แก้ไขหมวดหมู่' : 'เพิ่มหมวดหมู่ใหม่'}
-                </h3>
-                <p className="text-xs text-slate-500">จัดการชื่อและลำดับการแสดงผลของหมวดหมู่</p>
-              </div>
+              <button
+                type="button"
+                onClick={() => setIsCatModalOpen(false)}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+                title="ปิด"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
 
-            <form onSubmit={handleSaveCategory} className="space-y-4 text-xs">
+            {/* Body */}
+            <form onSubmit={handleSaveCategory} id="cat-modal-form" className="flex-1 overflow-y-auto p-5 sm:p-6 text-xs space-y-4">
               {/* Category Name */}
               <div>
                 <label className="block font-medium text-slate-700 mb-1">
@@ -1000,7 +1029,7 @@ export default function AdminPage() {
                   value={editingCategory.description || ''}
                   onChange={(e) => setEditingCategory({ ...editingCategory, description: e.target.value })}
                   placeholder="รายละเอียดสั้นๆ ของหมวดหมู่นี้..."
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 resize-none"
                 />
               </div>
 
@@ -1018,7 +1047,7 @@ export default function AdminPage() {
               </div>
 
               {/* Icon Picker */}
-              <div className="pt-1">
+              <div className="pt-2 border-t border-slate-100">
                 <div className="flex items-center justify-between mb-2">
                   <label className="block font-medium text-slate-700">
                     เลือกไอคอนหมวดหมู่ <span className="text-slate-400 font-normal">({CATEGORY_POPULAR_ICONS.length} ตัวเลือกยอดนิยม)</span>
@@ -1030,7 +1059,7 @@ export default function AdminPage() {
                 </div>
 
                 {/* Interactive Icon Grid */}
-                <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 max-h-52 overflow-y-auto p-2.5 bg-slate-50 border border-slate-200 rounded-xl scrollbar-thin">
+                <div className="grid grid-cols-4 sm:grid-cols-7 gap-2 max-h-48 overflow-y-auto p-2.5 bg-slate-50 border border-slate-200 rounded-xl scrollbar-thin">
                   {CATEGORY_POPULAR_ICONS.map((iconName) => {
                     const isSelected = (editingCategory.icon || 'Folder') === iconName;
                     return (
@@ -1064,26 +1093,27 @@ export default function AdminPage() {
                   />
                 </div>
               </div>
-
-              {/* Form Buttons */}
-              <div className="flex gap-2 pt-4 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setIsCatModalOpen(false)}
-                  className="flex-1 rounded-xl border border-slate-200 py-2.5 font-medium text-slate-600 hover:bg-slate-50"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 py-2.5 font-medium text-white shadow-sm hover:bg-sky-700 disabled:opacity-50"
-                >
-                  <Save className="h-4 w-4" />
-                  <span>{saving ? 'กำลังบันทึก...' : 'บันทึกหมวดหมู่'}</span>
-                </button>
-              </div>
             </form>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-2.5 px-6 py-3.5 bg-slate-50 border-t border-slate-100 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsCatModalOpen(false)}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 font-medium text-slate-600 hover:bg-slate-50 transition-colors text-xs"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="submit"
+                form="cat-modal-form"
+                disabled={saving}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-sky-600 px-5 py-2 font-medium text-white shadow-sm hover:bg-sky-700 disabled:opacity-50 transition-all text-xs"
+              >
+                <Save className="h-3.5 w-3.5" />
+                <span>{saving ? 'กำลังบันทึก...' : 'บันทึกหมวดหมู่'}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
