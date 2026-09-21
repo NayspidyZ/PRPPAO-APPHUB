@@ -1,6 +1,5 @@
 import React from 'react';
-import { Heart, Building2, ExternalLink } from 'lucide-react';
-import Link from 'next/link';
+import { Building2 } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
@@ -17,9 +16,7 @@ export const Footer: React.FC = () => {
             <span>&bull;</span>
             <span>ระบบรันบน: Vercel Cloud</span>
             <span>&bull;</span>
-            <Link href="/admin" className="text-sky-600 hover:underline">
-              ระบบจัดการ (Admin)
-            </Link>
+            <span>ระบบจัดการ (Admin)</span>
           </div>
         </div>
 
