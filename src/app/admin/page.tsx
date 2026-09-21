@@ -32,6 +32,8 @@ import {
   LayoutGrid,
   FolderTree,
   MousePointerClick,
+  LogOut,
+  ShieldCheck,
 } from 'lucide-react';
 
 export default function AdminPage() {
@@ -136,6 +138,12 @@ export default function AdminPage() {
         body: JSON.stringify(editingApp),
       });
 
+      if (res.status === 401) {
+        showToast('error', 'เซสชันหมดอายุแล้ว กรุณาเข้าสู่ระบบใหม่');
+        setTimeout(() => { window.location.href = '/?login=true'; }, 1500);
+        return;
+      }
+
       const result = await res.json();
       if (res.ok && result.status === 'success') {
         showToast('success', isUpdating ? 'อัปเดตข้อมูลแอปสำเร็จ' : 'เพิ่มแอปพลิเคชันสำเร็จ');
@@ -158,6 +166,11 @@ export default function AdminPage() {
 
     try {
       const res = await fetch(`/api/apps/${id}`, { method: 'DELETE' });
+      if (res.status === 401) {
+        showToast('error', 'เซสชันหมดอายุแล้ว กรุณาเข้าสู่ระบบใหม่');
+        setTimeout(() => { window.location.href = '/?login=true'; }, 1500);
+        return;
+      }
       const result = await res.json();
       if (res.ok && result.status === 'success') {
         showToast('success', 'ลบข้อมูลสำเร็จ');
@@ -217,6 +230,12 @@ export default function AdminPage() {
         }),
       });
 
+      if (res.status === 401) {
+        showToast('error', 'เซสชันหมดอายุแล้ว กรุณาเข้าสู่ระบบใหม่');
+        setTimeout(() => { window.location.href = '/?login=true'; }, 1500);
+        return;
+      }
+
       const result = await res.json();
       if (res.ok && result.status === 'success') {
         showToast('success', isUpdating ? 'อัปเดตหมวดหมู่สำเร็จ' : 'เพิ่มหมวดหมู่ใหม่สำเร็จ');
@@ -247,6 +266,11 @@ export default function AdminPage() {
       const res = await fetch(`/api/categories/${id}?name=${encodeURIComponent(name)}`, {
         method: 'DELETE',
       });
+      if (res.status === 401) {
+        showToast('error', 'เซสชันหมดอายุแล้ว กรุณาเข้าสู่ระบบใหม่');
+        setTimeout(() => { window.location.href = '/?login=true'; }, 1500);
+        return;
+      }
       const result = await res.json();
       if (res.ok && result.status === 'success') {
         showToast('success', 'ลบหมวดหมู่สำเร็จ');
@@ -256,6 +280,17 @@ export default function AdminPage() {
       }
     } catch (err: any) {
       showToast('error', 'เกิดข้อผิดพลาด: ' + err.message);
+    }
+  };
+
+  const handleLogout = async () => {
+    if (window.confirm('คุณต้องการออกจากระบบผู้ดูแลระบบ (Admin) ใช่หรือไม่?')) {
+      try {
+        await fetch('/api/auth', { method: 'DELETE' });
+      } catch (err) {
+        // ignore
+      }
+      window.location.href = '/';
     }
   };
 
@@ -302,6 +337,15 @@ export default function AdminPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Session Security Indicator */}
+            <div
+              className="hidden lg:inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 border border-emerald-200/80 px-2.5 py-1.5 text-[11px] font-medium text-emerald-700 shadow-2xs"
+              title="เซสชันความปลอดภัยของผู้ดูแลระบบมีอายุ 1 ชั่วโมง"
+            >
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+              <span>เซสชันปลอดภัย (1 ชม.)</span>
+            </div>
+
             <button
               onClick={() => setShowGuide(!showGuide)}
               className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
@@ -309,6 +353,7 @@ export default function AdminPage() {
               <HelpCircle className="h-4 w-4 text-sky-600" />
               <span className="hidden sm:inline">วิธีเชื่อม Google Sheet</span>
             </button>
+
             {activeTab === 'apps' ? (
               <button
                 onClick={handleAddNewApp}
@@ -326,6 +371,16 @@ export default function AdminPage() {
                 <span>เพิ่มหมวดหมู่ใหม่</span>
               </button>
             )}
+
+            {/* Logout Button */}
+            <button
+              onClick={handleLogout}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50/80 hover:bg-rose-100 px-2.5 sm:px-3 py-1.5 text-xs font-medium text-rose-700 transition-colors shadow-2xs"
+              title="ออกจากระบบผู้ดูแลระบบ"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">ออกจากระบบ</span>
+            </button>
           </div>
         </div>
       </nav>

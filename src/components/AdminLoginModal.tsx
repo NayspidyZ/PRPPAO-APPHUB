@@ -32,7 +32,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClos
       const data = await res.json();
       if (res.ok && data.status === 'success') {
         onClose();
-        router.push('/admin');
+        window.location.href = '/admin';
       } else {
         setError(data.message || 'รหัสผ่านไม่ถูกต้อง (ค่าเริ่มต้นคือ: admin1234)');
       }
@@ -87,8 +87,8 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({ isOpen, onClos
               />
               <KeyRound className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
             </div>
-            <p className="text-[11px] text-slate-600 mt-1.5">
-              * สามารถเปลี่ยนรหัสผ่านได้ในไฟล์ <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-700">.env.local</code> ด้วยตัวแปร <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-700">ADMIN_PASSWORD</code>
+            <p className="text-[11px] text-slate-500 mt-1.5 flex items-center justify-between">
+              <span>* เข้าสู่ระบบจะมีอายุการใช้งาน <strong>1 ชั่วโมง</strong> เพื่อความปลอดภัย</span>
             </p>
           </div>
 

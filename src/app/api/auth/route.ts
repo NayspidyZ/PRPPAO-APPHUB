@@ -1,4 +1,10 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
+import {
+  SESSION_COOKIE_NAME,
+  SESSION_MAX_AGE,
+  createAdminSessionToken,
+  verifyAdminSessionToken,
+} from '@/lib/session';
 
 export async function POST(request: Request) {
   try {
@@ -6,17 +12,21 @@ export async function POST(request: Request) {
     const adminPassword = process.env.ADMIN_PASSWORD || 'admin1234';
 
     if (password === adminPassword) {
+      // Generate secure HMAC-SHA256 signed session token (1 hour)
+      const token = await createAdminSessionToken(SESSION_MAX_AGE);
+
       const response = NextResponse.json({
         status: 'success',
         message: 'เข้าสู่ระบบสำเร็จ',
+        expiresIn: SESSION_MAX_AGE,
       });
 
-      // Simple session cookie (for production use crypto/JWT)
-      response.cookies.set('prppao_admin_session', 'authenticated', {
+      // Secure HTTP-Only Cookie with 1 hour expiration
+      response.cookies.set(SESSION_COOKIE_NAME, token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 7, // 7 days
+        maxAge: SESSION_MAX_AGE, // 1 hour (3600 seconds)
         path: '/',
       });
 
@@ -35,11 +45,35 @@ export async function POST(request: Request) {
   }
 }
 
+export async function GET(request: NextRequest) {
+  const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+  const session = await verifyAdminSessionToken(token);
+
+  if (session.valid && session.payload) {
+    const timeLeftSeconds = Math.max(0, Math.floor((session.payload.exp - Date.now()) / 1000));
+    return NextResponse.json({
+      status: 'success',
+      authenticated: true,
+      expiresIn: timeLeftSeconds,
+    });
+  }
+
+  return NextResponse.json(
+    {
+      status: 'error',
+      authenticated: false,
+      message: 'ไม่ได้เข้าสู่ระบบหรือ Session หมดอายุแล้ว',
+    },
+    { status: 401 }
+  );
+}
+
 export async function DELETE() {
   const response = NextResponse.json({
     status: 'success',
     message: 'ออกจากระบบสำเร็จ',
   });
-  response.cookies.delete('prppao_admin_session');
+  
+  response.cookies.delete(SESSION_COOKIE_NAME);
   return response;
 }

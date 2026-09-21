@@ -48,6 +48,12 @@ export default function HomePage() {
 
   useEffect(() => {
     loadData();
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('login') === 'true') {
+        setIsAdminModalOpen(true);
+      }
+    }
   }, []);
 
   // Compute unique categories dynamically from DB categories list
