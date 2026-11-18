@@ -1,5 +1,90 @@
 import React from 'react';
-import * as LucideIcons from 'lucide-react';
+import {
+  BarChart3,
+  Bell,
+  Bookmark,
+  Briefcase,
+  Building2,
+  Calendar,
+  Camera,
+  CheckCircle2,
+  ClipboardList,
+  Database,
+  FileText,
+  Folder,
+  FolderTree,
+  Globe,
+  Headphones,
+  Heart,
+  HelpCircle,
+  Layers,
+  Lightbulb,
+  Link,
+  Mail,
+  Megaphone,
+  MessageSquare,
+  Mic,
+  Monitor,
+  Newspaper,
+  Palette,
+  Pin,
+  Printer,
+  Search,
+  Send,
+  Settings,
+  Share2,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  Tag,
+  Tv,
+  Users,
+  Video,
+  type LucideIcon,
+} from 'lucide-react';
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  BarChart3,
+  Bell,
+  Bookmark,
+  Briefcase,
+  Building2,
+  Calendar,
+  Camera,
+  CheckCircle2,
+  ClipboardList,
+  Database,
+  FileText,
+  Folder,
+  FolderTree,
+  Globe,
+  Headphones,
+  Heart,
+  HelpCircle,
+  Layers,
+  Lightbulb,
+  Link,
+  Mail,
+  Megaphone,
+  MessageSquare,
+  Mic,
+  Monitor,
+  Newspaper,
+  Palette,
+  Pin,
+  Printer,
+  Search,
+  Send,
+  Settings,
+  Share2,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  Tag,
+  Tv,
+  Users,
+  Video,
+};
 
 interface DynamicIconProps {
   name: string;
@@ -21,12 +106,8 @@ export const DynamicIcon: React.FC<DynamicIconProps> = ({ name, className = 'w-6
     );
   }
 
-  // Lookup in Lucide icons
-  const iconKey = (name in LucideIcons ? name : 'Globe') as keyof typeof LucideIcons;
-  const IconComponent = (LucideIcons[iconKey] || LucideIcons.Globe) as React.ComponentType<{
-    className?: string;
-    size?: number;
-  }>;
+  // Lookup in tree-shaken ICON_MAP (falls back to Globe)
+  const IconComponent = ICON_MAP[name] || Globe;
 
   return <IconComponent className={className} size={size} />;
 };
@@ -93,4 +174,3 @@ export const CATEGORY_POPULAR_ICONS = [
   'Star',
   'CheckCircle2',
 ];
-

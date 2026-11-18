@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { fetchAllCategories, createGasCategory } from '@/lib/gas-client';
 
-export const dynamic = 'force-dynamic';
-
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const { categories, isMock } = await fetchAllCategories();
+    const { searchParams } = new URL(request.url);
+    const forceFresh = searchParams.get('fresh') === '1';
+    const { categories, isMock } = await fetchAllCategories(forceFresh);
     return NextResponse.json({
       status: 'success',
       data: categories,

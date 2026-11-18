@@ -1,9 +1,13 @@
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { AppItem, CategoryItem, ApiResponse } from '@/types/app';
 import { INITIAL_MOCK_APPS, INITIAL_MOCK_CATEGORIES } from './mock-data';
 
 // Store in-memory for dev/demo when GAS_API_URL is not set
 let inMemoryMockApps: AppItem[] = [...INITIAL_MOCK_APPS];
 let inMemoryMockCategories: CategoryItem[] = [...INITIAL_MOCK_CATEGORIES];
+
+const CACHE_TTL_SECONDS = 60;
+const GAS_CACHE_TAG = 'gas-data';
 
 export function getGasUrl(): string | undefined {
   return process.env.GAS_API_URL;
@@ -14,10 +18,125 @@ export function isUsingMock(): boolean {
   return !url || url.trim() === '' || url.includes('YOUR_APPS_SCRIPT_URL_HERE');
 }
 
+function invalidateGasCache() {
+  try {
+    revalidateTag(GAS_CACHE_TAG);
+    revalidatePath('/');
+  } catch {
+    // Ignore when invoked outside a Next.js request context
+  }
+}
+
+function mapRawApp(item: any): AppItem {
+  return {
+    id: String(item.id || item.ID || ''),
+    name: String(item.name || item.Name || ''),
+    description: String(item.description || item.Description || ''),
+    url: String(item.url || item.Url || item.URL || '#'),
+    category: String(item.category || item.Category || 'ทั่วไป'),
+    icon: String(item.icon || item.Icon || 'Globe'),
+    color: String(item.color || item.Color || 'sky'),
+    status: (item.status || item.Status || 'active').toLowerCase() === 'maintenance' ? 'maintenance' : 'active',
+    order: Number(item.order || item.Order || 0),
+    tags: item.tags
+      ? typeof item.tags === 'string'
+        ? item.tags.split(',').map((s: string) => s.trim())
+        : item.tags
+      : [],
+    department: String(item.department || item.Department || ''),
+    clicks: Number(item.clicks || item.Clicks || 0),
+    createdAt: item.createdAt || item.CreatedAt || '',
+    updatedAt: item.updatedAt || item.UpdatedAt || '',
+  };
+}
+
+function mapRawCategory(item: any): CategoryItem {
+  return {
+    id: String(item.id || item.ID || ''),
+    name: String(item.name || item.Name || ''),
+    description: String(item.description || item.Description || ''),
+    icon: String(item.icon || item.Icon || 'Folder'),
+    order: Number(item.order || item.Order || 1),
+    createdAt: item.createdAt || item.CreatedAt || '',
+    updatedAt: item.updatedAt || item.UpdatedAt || '',
+  };
+}
+
+function buildFetchOptions(forceFresh: boolean): RequestInit {
+  return forceFresh
+    ? { method: 'GET', headers: { Accept: 'application/json' }, cache: 'no-store' }
+    : {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        next: { revalidate: CACHE_TTL_SECONDS, tags: [GAS_CACHE_TAG] },
+      };
+}
+
+/**
+ * ดึงข้อมูลทั้ง Apps และ Categories ใน Request เดียวจาก Google Apps Script (ลด Latency ครึ่งหนึ่ง)
+ */
+export async function fetchAllData(forceFresh = false): Promise<{
+  apps: AppItem[];
+  categories: CategoryItem[];
+  isMock: boolean;
+}> {
+  const gasUrl = getGasUrl();
+
+  if (isUsingMock()) {
+    return {
+      apps: [...inMemoryMockApps],
+      categories: [...inMemoryMockCategories],
+      isMock: true,
+    };
+  }
+
+  try {
+    const response = await fetch(gasUrl!, buildFetchOptions(forceFresh));
+
+    if (!response.ok) {
+      console.warn(`[GAS] HTTP error ${response.status}. Falling back to mock data.`);
+      return {
+        apps: [...inMemoryMockApps],
+        categories: [...inMemoryMockCategories],
+        isMock: true,
+      };
+    }
+
+    const json = await response.json();
+    const rawApps = Array.isArray(json.apps) ? json.apps : Array.isArray(json.data) ? json.data : null;
+    const rawCategories = Array.isArray(json.categories) ? json.categories : null;
+
+    if (rawApps) {
+      const apps = rawApps.map(mapRawApp);
+      apps.sort((a: AppItem, b: AppItem) => (a.order || 999) - (b.order || 999));
+
+      const categories =
+        rawCategories && rawCategories.length > 0
+          ? rawCategories.map(mapRawCategory).sort((a: CategoryItem, b: CategoryItem) => (a.order || 999) - (b.order || 999))
+          : [...inMemoryMockCategories];
+
+      return { apps, categories, isMock: false };
+    }
+
+    return {
+      apps: [...inMemoryMockApps],
+      categories: [...inMemoryMockCategories],
+      isMock: true,
+    };
+  } catch (error) {
+    console.error('[GAS] Error connecting to Google Apps Script:', error);
+    return {
+      apps: [...inMemoryMockApps],
+      categories: [...inMemoryMockCategories],
+      isMock: true,
+    };
+  }
+}
+
 /**
  * ดึงรายการแอปพลิเคชันทั้งหมดจาก Google Apps Script (หรือ Mock Data หากยังไม่ตั้งค่า)
  */
-export async function fetchAllApps(): Promise<{ apps: AppItem[]; isMock: boolean }> {
+export async function fetchAllApps(forceFresh = false): Promise<{ apps: AppItem[]; isMock: boolean }> {
   const gasUrl = getGasUrl();
 
   if (isUsingMock()) {
@@ -25,13 +144,7 @@ export async function fetchAllApps(): Promise<{ apps: AppItem[]; isMock: boolean
   }
 
   try {
-    const response = await fetch(`${gasUrl!}?type=apps`, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-      },
-      cache: 'no-store',
-    });
+    const response = await fetch(`${gasUrl!}?type=apps`, buildFetchOptions(forceFresh));
 
     if (!response.ok) {
       console.warn(`[GAS] HTTP error ${response.status}. Falling back to mock data.`);
@@ -39,26 +152,10 @@ export async function fetchAllApps(): Promise<{ apps: AppItem[]; isMock: boolean
     }
 
     const json = await response.json();
-    const rawApps = Array.isArray(json.data) ? json.data : (json.apps || []);
+    const rawApps = Array.isArray(json.data) ? json.data : json.apps || [];
 
     if (Array.isArray(rawApps)) {
-      const items: AppItem[] = rawApps.map((item: any) => ({
-        id: String(item.id || item.ID || ''),
-        name: String(item.name || item.Name || ''),
-        description: String(item.description || item.Description || ''),
-        url: String(item.url || item.Url || item.URL || '#'),
-        category: String(item.category || item.Category || 'ทั่วไป'),
-        icon: String(item.icon || item.Icon || 'Globe'),
-        color: String(item.color || item.Color || 'sky'),
-        status: (item.status || item.Status || 'active').toLowerCase() === 'maintenance' ? 'maintenance' : 'active',
-        order: Number(item.order || item.Order || 0),
-        tags: item.tags ? (typeof item.tags === 'string' ? item.tags.split(',').map((s: string) => s.trim()) : item.tags) : [],
-        department: String(item.department || item.Department || ''),
-        clicks: Number(item.clicks || item.Clicks || 0),
-        createdAt: item.createdAt || item.CreatedAt || '',
-        updatedAt: item.updatedAt || item.UpdatedAt || '',
-      }));
-
+      const items: AppItem[] = rawApps.map(mapRawApp);
       items.sort((a, b) => (a.order || 999) - (b.order || 999));
       return { apps: items, isMock: false };
     }
@@ -83,6 +180,7 @@ export async function createGasApp(appData: Omit<AppItem, 'id' | 'createdAt' | '
 
   if (isUsingMock()) {
     inMemoryMockApps.unshift(newApp);
+    invalidateGasCache();
     return {
       status: 'success',
       data: newApp,
@@ -104,6 +202,9 @@ export async function createGasApp(appData: Omit<AppItem, 'id' | 'createdAt' | '
     });
 
     const result = await response.json();
+    if (result.status === 'success') {
+      invalidateGasCache();
+    }
     return {
       status: result.status === 'success' ? 'success' : 'error',
       data: result.data || newApp,
@@ -131,6 +232,7 @@ export async function updateGasApp(id: string, appData: Partial<AppItem>): Promi
         ...appData,
         updatedAt: new Date().toISOString(),
       };
+      invalidateGasCache();
       return {
         status: 'success',
         data: inMemoryMockApps[index],
@@ -158,6 +260,9 @@ export async function updateGasApp(id: string, appData: Partial<AppItem>): Promi
     });
 
     const result = await response.json();
+    if (result.status === 'success') {
+      invalidateGasCache();
+    }
     return {
       status: result.status === 'success' ? 'success' : 'error',
       data: result.data,
@@ -178,6 +283,7 @@ export async function updateGasApp(id: string, appData: Partial<AppItem>): Promi
 export async function deleteGasApp(id: string): Promise<ApiResponse<null>> {
   if (isUsingMock()) {
     inMemoryMockApps = inMemoryMockApps.filter((a) => a.id !== id);
+    invalidateGasCache();
     return {
       status: 'success',
       message: 'ลบข้อมูลสำเร็จ (โหมดจำลอง Mock Data)',
@@ -198,6 +304,9 @@ export async function deleteGasApp(id: string): Promise<ApiResponse<null>> {
     });
 
     const result = await response.json();
+    if (result.status === 'success') {
+      invalidateGasCache();
+    }
     return {
       status: result.status === 'success' ? 'success' : 'error',
       message: result.message || 'ลบข้อมูลสำเร็จ',
@@ -219,6 +328,7 @@ export async function incrementAppClick(id: string): Promise<{ success: boolean;
     const app = inMemoryMockApps.find((a) => a.id === id);
     if (app) {
       app.clicks = (app.clicks || 0) + 1;
+      invalidateGasCache();
       return { success: true, clicks: app.clicks };
     }
     return { success: false, clicks: 0 };
@@ -235,6 +345,9 @@ export async function incrementAppClick(id: string): Promise<{ success: boolean;
     });
 
     const result = await response.json();
+    if (result.status === 'success') {
+      invalidateGasCache();
+    }
     return {
       success: result.status === 'success',
       clicks: Number(result.clicks || 0),
@@ -252,7 +365,7 @@ export async function incrementAppClick(id: string): Promise<{ success: boolean;
 /**
  * ดึงรายการหมวดหมู่ทั้งหมด
  */
-export async function fetchAllCategories(): Promise<{ categories: CategoryItem[]; isMock: boolean }> {
+export async function fetchAllCategories(forceFresh = false): Promise<{ categories: CategoryItem[]; isMock: boolean }> {
   const gasUrl = getGasUrl();
 
   if (isUsingMock()) {
@@ -260,11 +373,7 @@ export async function fetchAllCategories(): Promise<{ categories: CategoryItem[]
   }
 
   try {
-    const response = await fetch(`${gasUrl!}?type=categories`, {
-      method: 'GET',
-      headers: { 'Accept': 'application/json' },
-      cache: 'no-store',
-    });
+    const response = await fetch(`${gasUrl!}?type=categories`, buildFetchOptions(forceFresh));
 
     if (!response.ok) {
       return { categories: [...inMemoryMockCategories], isMock: true };
@@ -274,16 +383,7 @@ export async function fetchAllCategories(): Promise<{ categories: CategoryItem[]
     const rawCategories = json.categories || json.data || [];
 
     if (Array.isArray(rawCategories) && rawCategories.length > 0) {
-      const items: CategoryItem[] = rawCategories.map((item: any) => ({
-        id: String(item.id || item.ID || ''),
-        name: String(item.name || item.Name || ''),
-        description: String(item.description || item.Description || ''),
-        icon: String(item.icon || item.Icon || 'Folder'),
-        order: Number(item.order || item.Order || 1),
-        createdAt: item.createdAt || item.CreatedAt || '',
-        updatedAt: item.updatedAt || item.UpdatedAt || '',
-      }));
-
+      const items: CategoryItem[] = rawCategories.map(mapRawCategory);
       items.sort((a, b) => (a.order || 999) - (b.order || 999));
       return { categories: items, isMock: false };
     }
@@ -311,6 +411,7 @@ export async function createGasCategory(
   if (isUsingMock()) {
     inMemoryMockCategories.push(newCat);
     inMemoryMockCategories.sort((a, b) => (a.order || 999) - (b.order || 999));
+    invalidateGasCache();
     return {
       status: 'success',
       data: newCat,
@@ -330,6 +431,9 @@ export async function createGasCategory(
     });
 
     const result = await response.json();
+    if (result.status === 'success') {
+      invalidateGasCache();
+    }
     return {
       status: result.status === 'success' ? 'success' : 'error',
       data: result.data || newCat,
@@ -372,6 +476,7 @@ export async function updateGasCategory(
         });
       }
 
+      invalidateGasCache();
       return {
         status: 'success',
         data: inMemoryMockCategories[index],
@@ -398,6 +503,9 @@ export async function updateGasCategory(
     });
 
     const result = await response.json();
+    if (result.status === 'success') {
+      invalidateGasCache();
+    }
     return {
       status: result.status === 'success' ? 'success' : 'error',
       data: result.data,
@@ -426,6 +534,7 @@ export async function deleteGasCategory(id: string, categoryName?: string): Prom
         }
       });
     }
+    invalidateGasCache();
     return {
       status: 'success',
       message: 'ลบหมวดหมู่เรียบร้อย (โหมดจำลอง Mock Data)',
@@ -445,6 +554,9 @@ export async function deleteGasCategory(id: string, categoryName?: string): Prom
     });
 
     const result = await response.json();
+    if (result.status === 'success') {
+      invalidateGasCache();
+    }
     return {
       status: result.status === 'success' ? 'success' : 'error',
       message: result.message || 'ลบหมวดหมู่สำเร็จ',

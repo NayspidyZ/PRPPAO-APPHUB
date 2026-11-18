@@ -57,25 +57,19 @@ export default function AdminPage() {
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [showGuide, setShowGuide] = useState(false);
 
-  // Load all data
+  // Load all data (single request, bypass cache for fresh admin view)
   const loadData = async () => {
     setLoading(true);
     try {
-      const [appsRes, catsRes] = await Promise.all([
-        fetch('/api/apps', { cache: 'no-store' }),
-        fetch('/api/categories', { cache: 'no-store' }),
-      ]);
+      const res = await fetch('/api/hub?fresh=1', { cache: 'no-store' });
+      const data = await res.json();
 
-      const appsData = await appsRes.json();
-      const catsData = await catsRes.json();
-
-      if (appsData.status === 'success') {
-        setApps(appsData.data || []);
-        setIsMock(Boolean(appsData.isMock));
-      }
-
-      if (catsData.status === 'success' && Array.isArray(catsData.data)) {
-        setCategories(catsData.data);
+      if (data.status === 'success') {
+        setApps(data.apps || []);
+        setIsMock(Boolean(data.isMock));
+        if (Array.isArray(data.categories)) {
+          setCategories(data.categories);
+        }
       }
     } catch (err) {
       showToast('error', 'ไม่สามารถโหลดข้อมูลได้');
